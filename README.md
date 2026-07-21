@@ -1,36 +1,56 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# P.R.O.M.I.S.E.
 
-## Getting Started
+PCOS Risk Observation, Monitoring, Intervention, Screening, and Education.
 
-First, run the development server:
+**Educational screening only — not a diagnosis.** Ages 12–24.
+
+## Stack
+
+- Next.js 16 App Router + TypeScript + Tailwind v4 + shadcn/ui
+- Supabase (Auth / Postgres / RLS) — env required for auth
+- Pure TS rule engine (`src/lib/rules/pcosScreen.ts`) + Vitest
+- Vercel deploy target
+
+Product docs: [`docs/`](./docs/).
+
+## Setup
 
 ```bash
+cp .env.example .env.local
+# fill Supabase + AI keys when ready
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open http://localhost:3000
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Scripts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Command | What |
+| --- | --- |
+| `npm run dev` | Dev server |
+| `npm test` | Rule engine unit tests |
+| `npm run build` | Production build |
+| `npm run lint` | ESLint |
 
-## Learn More
+## Routes (P0 shell)
 
-To learn more about Next.js, take a look at the following resources:
+- `/` landing
+- `/login` `/register` `/consent` — auth UI stubs
+- `/home` `/cycle` `/screen` `/assistant` `/profile` — app shell + bottom nav
+- `POST /api/screening` — scores answers via pure rules (no DB yet)
+- Other API routes return 501 until wired
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Notes
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- Next 16: session refresh lives in `src/proxy.ts` (not `middleware.ts`)
+- Mobile-first: shell `max-w-lg`, touch targets ≥44px
+- Screening UI: grouped Yes/No pages (QuizGroup) — implement next
 
-## Deploy on Vercel
+## Deploy to Vercel
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. Import GitHub repository in Vercel.
+2. Add variables from `.env.example` under Project Settings → Environment Variables.
+3. Set `NEXT_PUBLIC_APP_URL` to production URL.
+4. Add production URL to Supabase Auth → URL Configuration.
+5. Deploy with framework preset **Next.js** and default build command `npm run build`.
