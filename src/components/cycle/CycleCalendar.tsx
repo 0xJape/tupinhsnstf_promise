@@ -98,17 +98,17 @@ export function CycleCalendar({
           }}
           modifiersClassNames={{
             menstrual: cn(
-              "bg-rose-200/90 text-rose-950 font-semibold dark:bg-rose-900/70 dark:text-rose-100",
+              "bg-rose-200/90 text-rose-950 font-semibold dark:bg-rose-700 dark:text-white dark:ring-1 dark:ring-rose-400/70",
               SELECTED,
             ),
-            follicular: cn("bg-sky-100 text-sky-900 dark:bg-sky-900/60 dark:text-sky-100", SELECTED),
+            follicular: cn("bg-sky-100 text-sky-900 dark:bg-sky-700 dark:text-white dark:ring-1 dark:ring-sky-400/70", SELECTED),
             ovulation: cn(
-              "bg-amber-200/90 text-amber-950 font-semibold ring-1 ring-amber-400/50 dark:bg-amber-900/65 dark:text-amber-100 dark:ring-amber-500/50",
+              "bg-amber-200/90 text-amber-950 font-semibold ring-1 ring-amber-400/50 dark:bg-amber-600 dark:text-white dark:ring-amber-300/80",
               SELECTED,
             ),
-            luteal: cn("bg-violet-100 text-violet-900 dark:bg-violet-900/60 dark:text-violet-100", SELECTED),
+            luteal: cn("bg-violet-100 text-violet-900 dark:bg-violet-700 dark:text-white dark:ring-1 dark:ring-violet-400/70", SELECTED),
             expected: cn(
-              "bg-rose-50 text-rose-800 ring-1 ring-dashed ring-rose-300/80 dark:bg-rose-950/45 dark:text-rose-200 dark:ring-rose-500/60",
+              "bg-rose-50 text-rose-800 ring-1 ring-dashed ring-rose-300/80 dark:bg-rose-950 dark:text-rose-100 dark:ring-rose-400",
               SELECTED,
             ),
           }}

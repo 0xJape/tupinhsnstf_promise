@@ -2,6 +2,7 @@
 import { redirect } from "next/navigation";
 import { Bell, ChevronRight, HelpCircle, LogOut } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -381,9 +382,9 @@ export default async function ProfilePage({ searchParams }: Props) {
             </Field>
           </CardContent>
           <CardFooter>
-            <Button type="submit" className="min-h-12 w-full rounded-xl">
+            <SubmitButton pendingLabel="Saving…" className="min-h-12 w-full rounded-xl">
               Save profile
-            </Button>
+            </SubmitButton>
           </CardFooter>
         </form>
       </Card>

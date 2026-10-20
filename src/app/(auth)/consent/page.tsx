@@ -1,6 +1,7 @@
 ﻿import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import {
   Card,
   CardContent,
@@ -223,9 +224,9 @@ export default async function ConsentPage({ searchParams }: Props) {
             ) : null}
           </CardContent>
           <CardFooter className="flex flex-col gap-3">
-            <Button type="submit" className="min-h-12 w-full rounded-xl">
+            <SubmitButton pendingLabel="Saving consent…" className="min-h-12 w-full rounded-xl">
               I agree — continue
-            </Button>
+            </SubmitButton>
             <p className="text-center text-xs text-muted-foreground">
               Declining required items means you cannot use the full app.
             </p>

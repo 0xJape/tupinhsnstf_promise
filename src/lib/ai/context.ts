@@ -8,6 +8,7 @@ export type AiUserContext = {
   factors: string[];
   hormonalMeds: boolean | null;
   cycleSummary: string | null;
+  dailyPatternSummary: string | null;
 };
 
 function ageBandFromDob(dob: string | null | undefined): string | null {
@@ -29,6 +30,7 @@ export async function buildAiContext(
   supabase: SupabaseClient,
   userId: string,
   relatedAssessmentId?: string | null,
+  includeDailyPatterns = false,
 ): Promise<AiUserContext> {
   const { data: profile } = await supabase
     .from("profiles")
@@ -101,6 +103,29 @@ export async function buildAiContext(
     cycleSummary = `${logs.length} recent period log(s)${avgGap != null ? `, ~${avgGap} days between starts` : ""}`;
   }
 
+  let dailyPatternSummary: string | null = null;
+  if (includeDailyPatterns) {
+    const { data: dailyLogs } = await supabase
+      .from("daily_wellness_logs")
+      .select("log_date, pain_level, fatigue_level, mood, acne_change, sleep_hours, stress_level, notes")
+      .eq("user_id", userId)
+      .order("log_date", { ascending: false })
+      .limit(14);
+    if (dailyLogs?.length) {
+      const items = dailyLogs.map((log) => [
+        log.log_date,
+        log.pain_level != null && `pain ${log.pain_level}/10`,
+        log.fatigue_level != null && `fatigue ${log.fatigue_level}/10`,
+        log.mood && `mood ${log.mood}`,
+        log.acne_change && `acne ${log.acne_change}`,
+        log.sleep_hours != null && `${log.sleep_hours}h sleep`,
+        log.stress_level != null && `stress ${log.stress_level}/5`,
+        log.notes && `note: ${log.notes.slice(0, 180)}`,
+      ].filter(Boolean).join(", ")).join(" | ");
+      dailyPatternSummary = `Last ${dailyLogs.length} self-reported daily check-in(s): ${items}`;
+    }
+  }
+
   return {
     ageBand: ageBandFromDob(profile?.date_of_birth),
     bmi:
@@ -113,6 +138,7 @@ export async function buildAiContext(
     factors,
     hormonalMeds,
     cycleSummary,
+    dailyPatternSummary,
   };
 }
 
@@ -131,6 +157,7 @@ export function formatContextBlock(ctx: AiUserContext): string {
       ? `- On hormonal / cycle-affecting meds (self-report): ${ctx.hormonalMeds ? "yes" : "no"}`
       : null,
     ctx.cycleSummary ? `- Cycle logs: ${ctx.cycleSummary}` : null,
+    ctx.dailyPatternSummary ? `- Daily check-ins (user explicitly requested this summary): ${ctx.dailyPatternSummary}` : null,
   ].filter(Boolean);
   return lines.join("\n");
 }

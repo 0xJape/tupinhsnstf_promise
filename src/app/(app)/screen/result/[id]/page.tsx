@@ -6,6 +6,7 @@ import {
   CheckCircle2,
   ChevronDown,
   ClipboardList,
+  FileText,
   Home,
   Info,
   MessageCircle,
@@ -17,13 +18,14 @@ import {
 import { DisclaimerBanner } from "@/components/shared/DisclaimerBanner";
 import { RiskBadge } from "@/components/screening/RiskBadge";
 import { ScoreRing } from "@/components/screening/ScoreRing";
-import { SeekCareReferral } from "@/components/screening/SeekCareReferral";
+import { ReferralPrompt } from "@/components/screening/ReferralPrompt";
 import { buttonVariants } from "@/components/ui/button";
 import {
   CATEGORY_COPY,
   REFERRAL_CHECKLIST,
   VISIT_QUESTIONS,
 } from "@/lib/screening/content";
+import { assessConfidence } from "@/lib/screening/confidence";
 import { MAX_SCREEN_SCORE } from "@/lib/rules/pcosScreen";
 import { createClient } from "@/lib/supabase/server";
 import { cn } from "@/lib/utils";
@@ -31,6 +33,7 @@ import type { ContributingFactor, RiskCategory } from "@/types/screening";
 
 type Props = {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ submitted?: string }>;
 };
 
 const barFill: Record<RiskCategory, string> = {
@@ -39,8 +42,9 @@ const barFill: Record<RiskCategory, string> = {
   High: "bg-gradient-to-r from-rose-400 to-rose-600",
 };
 
-export default async function ScreenResultPage({ params }: Props) {
+export default async function ScreenResultPage({ params, searchParams }: Props) {
   const { id } = await params;
+  const { submitted } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -58,9 +62,72 @@ export default async function ScreenResultPage({ params }: Props) {
 
   if (!row) notFound();
 
+  const [{ data: profile }, { data: periodLogs }] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("height_cm, weight_kg, activity_level, exercise_frequency, sleep_band, stress_level")
+      .eq("id", user.id)
+      .maybeSingle(),
+    supabase
+      .from("menstrual_logs")
+      .select("start_date, duration_days, flow, pain_level")
+      .eq("user_id", user.id)
+      .order("start_date", { ascending: true }),
+  ]);
+
   const category = row.category as RiskCategory;
   const factors = (row.contributing_factors ?? []) as ContributingFactor[];
   const answers = (row.answers ?? {}) as Record<string, unknown>;
+  const isLegacy = row.rule_version === "pcos-screen-v1";
+  const questionnaireComplete = isLegacy
+    ? Array.from({ length: 12 }, (_, i) => `Q${i + 1}`).every((key) => key in answers)
+    : [
+        "menarcheAgeYears",
+        "cycleIrregular",
+        "gap90",
+        "skippedMonths",
+        "hirsutism",
+        "acnePersistent",
+        "scalpThinning",
+        "elevatedTestosterone",
+        "weightHard",
+        "rapidWeightGain",
+        "acanthosis",
+        "skinTags",
+        "metabolicHistory",
+        "familyPcos",
+        "familyDiabetes",
+        "lowActivity",
+        "shortSleep",
+        "unhealthyDiet",
+        "hormonalMeds",
+        "ultrasoundPcom",
+        "amhTested",
+        "moodConcern",
+      ].every((key) => key in answers);
+  const logs = periodLogs ?? [];
+  const validCycleIntervalCount = logs.slice(1).filter((log, index) => {
+    const prior = logs[index];
+    const days =
+      (new Date(log.start_date).getTime() - new Date(prior.start_date).getTime()) /
+      86_400_000;
+    return days >= 15 && days <= 90;
+  }).length;
+  const confidence = assessConfidence({
+    questionnaireComplete,
+    hasBmi: row.bmi_at_assessment != null || Boolean(profile?.height_cm && profile.weight_kg),
+    periodLogCount: logs.length,
+    validCycleIntervalCount,
+    detailedPeriodLogCount: logs.filter(
+      (log) => log.duration_days != null && log.flow != null && log.pain_level != null,
+    ).length,
+    lifestyleBaselineComplete: Boolean(
+      profile?.activity_level &&
+        profile.exercise_frequency &&
+        profile.sleep_band &&
+        profile.stress_level != null,
+    ),
+  });
   const hormonalMeds = Boolean(
     answers.hormonalMeds ?? answers.Q12 /* legacy v1 */,
   );
@@ -71,10 +138,8 @@ export default async function ScreenResultPage({ params }: Props) {
     day: "numeric",
     year: "numeric",
   });
+  const maxScore = isLegacy ? 20 : MAX_SCREEN_SCORE;
   const maxFactorPts = Math.max(1, ...factors.map((f) => f.points), 1);
-  const pct = Math.round(
-    (Math.min(row.total_score, MAX_SCREEN_SCORE) / MAX_SCREEN_SCORE) * 100,
-  );
 
   return (
     <div className="result-stage space-y-4 sm:space-y-5 -mx-1">
@@ -102,7 +167,7 @@ export default async function ScreenResultPage({ params }: Props) {
         <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-center sm:gap-8">
           <ScoreRing
             score={row.total_score}
-            maxScore={MAX_SCREEN_SCORE}
+            maxScore={maxScore}
             category={category}
             className="shrink-0"
           />
@@ -126,12 +191,12 @@ export default async function ScreenResultPage({ params }: Props) {
                     <>
                       {row.total_score}
                       <span className="text-xs font-medium text-muted-foreground">
-                        /{MAX_SCREEN_SCORE}
+                        /{maxScore}
                       </span>
                     </>
                   ),
                 },
-                { label: "Fill", value: `${pct}%` },
+                { label: "Level", value: category },
                 { label: "Factors", value: String(factors.length) },
               ]).map((stat) => (
                 <div
@@ -164,6 +229,34 @@ export default async function ScreenResultPage({ params }: Props) {
           className="border-border bg-card/70 shadow-none backdrop-blur-xl"
         />
       </div>
+
+      <section className="glass glass-rise glass-rise-delay-2 rounded-[1.25rem] p-4 sm:p-5">
+        <div className="flex gap-3">
+          <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl glass-chip text-primary">
+            <ClipboardList className="size-5" aria-hidden />
+          </div>
+          <div className="min-w-0 space-y-1.5">
+            <p className="section-label text-primary">Assessment data confidence</p>
+            <p className="text-lg font-semibold tracking-tight">
+              {confidence.score}% · {confidence.band}
+            </p>
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              Reliability of available screening context — not a chance of having PCOS.
+            </p>
+          </div>
+        </div>
+        <ul className="mt-4 grid gap-2 sm:grid-cols-2">
+          {confidence.reasons.map((reason) => (
+            <li
+              key={reason}
+              className="flex gap-2 rounded-2xl glass-chip px-3 py-2 text-xs leading-relaxed text-muted-foreground"
+            >
+              <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-primary" aria-hidden />
+              {reason}
+            </li>
+          ))}
+        </ul>
+      </section>
 
       {/* Meaning */}
       <section className="glass glass-rise glass-rise-delay-2 rounded-[1.25rem] p-4 sm:p-5">
@@ -330,7 +423,7 @@ export default async function ScreenResultPage({ params }: Props) {
             </ol>
           </details>
 
-          <SeekCareReferral assessmentId={row.id} />
+          <div className="border-t border-border p-4 sm:p-5"><ReferralPrompt assessmentId={row.id} initialOpen={submitted === "1"} /></div>
         </section>
       ) : (
         <section className="glass flex gap-3 rounded-[1.25rem] p-4">
@@ -348,12 +441,12 @@ export default async function ScreenResultPage({ params }: Props) {
       {/* Actions */}
       <section className="space-y-3" aria-label="Next actions">
         <h2 className="section-label px-0.5">What next</h2>
-        <div className="grid gap-2.5 sm:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-2">
           <Link
             href="/assistant"
             className={cn(
               buttonVariants({ size: "lg" }),
-              "h-auto min-h-16 flex-col items-start gap-1 rounded-2xl px-4 py-3.5 shadow-lg shadow-primary/15 sm:items-center sm:text-center",
+              "h-auto min-h-24 flex-col items-start justify-center gap-1.5 rounded-2xl px-5 py-4 text-left shadow-lg shadow-primary/15",
             )}
           >
             <span className="inline-flex items-center gap-2 font-semibold">
@@ -366,7 +459,7 @@ export default async function ScreenResultPage({ params }: Props) {
           </Link>
           <Link
             href="/cycle"
-            className="glass flex h-auto min-h-16 flex-col items-start gap-1 rounded-2xl px-4 py-3.5 transition hover:bg-accent sm:items-center sm:text-center"
+            className="glass flex min-h-24 flex-col items-start justify-center gap-1.5 rounded-2xl px-5 py-4 text-left transition hover:bg-accent"
           >
             <span className="inline-flex items-center gap-2 text-sm font-semibold">
               <CalendarDays className="size-4" aria-hidden />
@@ -377,8 +470,20 @@ export default async function ScreenResultPage({ params }: Props) {
             </span>
           </Link>
           <Link
+            href={`/screen/result/${row.id}/summary`}
+            className="glass flex min-h-24 flex-col items-start justify-center gap-1.5 rounded-2xl px-5 py-4 text-left transition hover:bg-accent"
+          >
+            <span className="inline-flex items-center gap-2 text-sm font-semibold">
+              <FileText className="size-4" aria-hidden />
+              Doctor summary
+            </span>
+            <span className="text-xs text-muted-foreground">
+              Print or save PDF
+            </span>
+          </Link>
+          <Link
             href="/home"
-            className="glass flex h-auto min-h-16 flex-col items-start gap-1 rounded-2xl px-4 py-3.5 transition hover:bg-accent sm:items-center sm:text-center"
+            className="glass flex min-h-24 flex-col items-start justify-center gap-1.5 rounded-2xl px-5 py-4 text-left transition hover:bg-accent"
           >
             <span className="inline-flex items-center gap-2 text-sm font-semibold">
               <Home className="size-4" aria-hidden />

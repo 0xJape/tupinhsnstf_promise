@@ -1,5 +1,4 @@
 ﻿import Link from "next/link";
-import Image from "next/image";
 import { redirect } from "next/navigation";
 import {
   ArrowRight,
@@ -14,7 +13,9 @@ import {
 import { RiskBadge } from "@/components/screening/RiskBadge";
 import { DisclaimerBanner } from "@/components/shared/DisclaimerBanner";
 import { ThemeToggle } from "@/components/shared/ThemeToggle";
+import { PhaseGuidanceCard } from "@/components/cycle/PhaseGuidanceCard";
 import { Promi } from "@/components/promi/Promi";
+import { DailyBrief } from "@/components/home/DailyBrief";
 import { buttonVariants } from "@/components/ui/button";
 import {
   computeCycleInsights,
@@ -220,7 +221,7 @@ function TrendSpark({ scores }: { scores: number[] }) {
       </svg>
       {bars.length === 1 ? (
         <p className="mt-0.5 text-[10px] text-muted-foreground">
-          Retake later for multi-point trend.
+          Baseline recorded. Future follow-ups require study protocol access.
         </p>
       ) : null}
     </div>
@@ -341,8 +342,8 @@ export default async function HomePage({ searchParams }: Props) {
       tone: "bg-primary/15 text-primary",
     },
     {
-      href: "/assistant",
-      label: "Symptoms",
+      href: "/track",
+      label: "Track",
       icon: HeartPulse,
       tone: "bg-amber-500/15 text-amber-800 dark:text-amber-300",
     },
@@ -361,8 +362,8 @@ export default async function HomePage({ searchParams }: Props) {
   ] as const;
 
   return (
-    <div className="space-y-4">
-        <header className="flex items-start justify-between gap-3">
+    <div className="dashboard-home mx-auto w-full max-w-7xl space-y-6">
+      <header className="dashboard-header flex items-start justify-between gap-3">
           <div className="space-y-1">
             <p className="section-label text-primary">
               {greet}
@@ -376,42 +377,15 @@ export default async function HomePage({ searchParams }: Props) {
             </p>
           </div>
           <ThemeToggle className="glass-chip" />
-        </header>
+      </header>
 
-        <section
-          className="glass-strong grid grid-cols-[minmax(0,1fr)_minmax(7.5rem,42%)] items-center gap-2 overflow-hidden rounded-[28px] p-4 sm:gap-3 sm:p-5"
-          aria-label="P.R.O.M.I.S.E. overview"
-        >
-          <div className="min-w-0 py-0.5">
-            <p className="font-display text-[11px] font-extrabold tracking-[0.18em] text-primary uppercase">
-              P.R.O.M.I.S.E.
-            </p>
-            <h2 className="mt-2 font-display text-lg font-extrabold leading-snug tracking-tight text-foreground sm:text-xl">
-              PCOS Risk Observation &amp; Education
-            </h2>
-            <p className="mt-2 text-xs font-medium leading-relaxed text-muted-foreground sm:text-sm">
-              Screen, track cycles, and prepare for care — at your pace.
-            </p>
-          </div>
-          {/* Bigger mark; stays in-flow so card grows — no bottom overlay */}
-          <div className="relative mx-auto aspect-square w-full max-w-[11rem] sm:max-w-[12.5rem]">
-            <Image
-              src="/brand/vage.png"
-              alt=""
-              fill
-              priority
-              sizes="(max-width: 640px) 176px, 200px"
-              className="object-contain object-center"
-            />
-          </div>
+      <div className="dashboard-main-grid">
+        <section className="dashboard-today" aria-label="Today">
+          <DailyBrief greeting={greet} name={name} cycleLine={cycleLine} action={recommended} actionKind={referral ? "care" : !latestScreen ? "screen" : "cycle"} />
+          <DisclaimerBanner compact />
         </section>
 
-        <DisclaimerBanner compact />
-
-        <section
-          className="grid grid-cols-1 gap-2.5 sm:grid-cols-2"
-          aria-label="Risk snapshot"
-        >
+        <section className="dashboard-risk" aria-label="Risk snapshot">
           <Link
             href={
               latestScreen ? `/screen/result/${latestScreen.id}` : "/screen"
@@ -460,17 +434,15 @@ export default async function HomePage({ searchParams }: Props) {
 
           <div className="glass flex min-h-[11rem] flex-col rounded-[28px] p-4">
             <div className="flex items-baseline justify-between gap-2">
-              <span className="section-label">Risk trend</span>
+              <span className="section-label">Baseline status</span>
               <span className="text-[10px] font-medium text-muted-foreground">
                 0–100
               </span>
             </div>
             <p className="mt-1 text-sm font-semibold tracking-tight text-foreground">
               {(screenRows?.length ?? 0) === 0
-                ? "No screens yet"
-                : (screenRows?.length ?? 0) === 1
-                  ? "1 screen"
-                  : `${screenRows!.length} screens`}
+                ? "Not completed"
+                : "Baseline completed"}
             </p>
             <TrendSpark scores={trendScores} />
             <Link
@@ -483,9 +455,9 @@ export default async function HomePage({ searchParams }: Props) {
           </div>
         </section>
 
-        <section className="space-y-3" aria-label="Quick access">
+        <section className="dashboard-actions space-y-3" aria-label="Quick access">
           <h2 className="section-label">Quick access</h2>
-          <div className="grid grid-cols-5 gap-2">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
             {quick.map(({ href, label, icon: Icon, tone }) => (
               <Link
                 key={label}
@@ -508,10 +480,46 @@ export default async function HomePage({ searchParams }: Props) {
           </div>
         </section>
 
-        <section
-          className="glass-strong rounded-[28px] p-5"
-          aria-label="Recommended action"
-        >
+        <section className="dashboard-education" aria-labelledby="dashboard-education-title">
+          <div className="mb-3 flex items-end justify-between gap-3">
+            <div>
+              <p className="section-label text-primary">Learn something useful</p>
+              <h2 id="dashboard-education-title" className="mt-1 text-lg font-semibold tracking-tight text-foreground">PCOS education</h2>
+            </div>
+            <Link href="/help" className="text-xs font-semibold text-primary">View help <ArrowRight className="ml-1 inline size-3" aria-hidden /></Link>
+          </div>
+          <article className="dashboard-video overflow-hidden rounded-xl border border-border bg-card">
+            <div className="aspect-[9/16] max-h-[28rem] w-full bg-black sm:aspect-video">
+              <iframe
+                className="size-full"
+                src="https://www.youtube-nocookie.com/embed/MihxsdC40zI"
+                title="P.R.O.M.I.S.E. PCOS education video"
+                loading="lazy"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
+              />
+            </div>
+            <div className="p-4">
+              <h3 className="font-semibold text-foreground">Understanding PCOS</h3>
+              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">Short educational video. It does not diagnose PCOS or replace professional medical advice.</p>
+            </div>
+          </article>
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            {[
+              ["Understanding your cycle", "gmIzqE1mxsU"],
+              ["Questions for your clinician", "gbNyX76pXxA"],
+            ].map(([title, videoId]) => (
+              <a key={videoId} href={`https://www.youtube.com/watch?v=${videoId}`} target="_blank" rel="noreferrer" className="overflow-hidden rounded-xl border border-border bg-card transition-opacity hover:opacity-85">
+                <div className="aspect-video bg-black">
+                  <iframe className="pointer-events-none size-full" src={`https://www.youtube-nocookie.com/embed/${videoId}`} title={title} loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen />
+                </div>
+                <p className="p-3 text-sm font-semibold text-foreground">{title}</p>
+              </a>
+            ))}
+          </div>
+        </section>
+
+        <section className="dashboard-recommendation glass-strong rounded-[28px] p-5" aria-label="Recommended action">
           <div className="flex items-start gap-3">
             <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-primary/12 text-primary">
               {referral ? (
@@ -557,10 +565,7 @@ export default async function HomePage({ searchParams }: Props) {
           </div>
         </section>
 
-        <section
-          className="grid grid-cols-2 gap-2.5"
-          aria-label="Cycle and chat"
-        >
+        <section className="dashboard-cycle grid grid-cols-2 gap-2.5" aria-label="Cycle and chat">
           <Link
             href="/cycle"
             className="glass group flex flex-col gap-2 rounded-[28px] p-3.5 transition active:scale-[0.99]"
@@ -617,13 +622,18 @@ export default async function HomePage({ searchParams }: Props) {
           </Link>
         </section>
 
-        <section className="glass-strong rounded-[28px] p-4" aria-label="Promi guide">
+        <section className="dashboard-phase" aria-label="Phase guidance">
+          <PhaseGuidanceCard insights={insights} />
+        </section>
+
+        <section className="dashboard-promi glass-strong rounded-[28px] p-4" aria-label="Promi guide">
           <Promi
             emotion="wave"
             size="sm"
             line="I can help explain your results and next steps."
           />
         </section>
+      </div>
     </div>
   );
 }

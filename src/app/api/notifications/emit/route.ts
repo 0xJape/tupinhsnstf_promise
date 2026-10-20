@@ -2,12 +2,11 @@
 import { z } from "zod";
 import { emitMakeEvent } from "@/lib/make/emit";
 import { MAKE_EVENT_TYPES } from "@/lib/make/types";
-import { createClient } from "@/lib/supabase/server";
 
 const bodySchema = z.object({
   eventType: z.enum(MAKE_EVENT_TYPES),
   data: z.record(z.string(), z.unknown()).optional(),
-  userId: z.string().uuid().optional(),
+  userId: z.string().uuid(),
 });
 
 function authorizedAsCron(req: Request): boolean {
@@ -19,8 +18,7 @@ function authorizedAsCron(req: Request): boolean {
 
 /**
  * POST /api/notifications/emit
- * - Logged-in user: emit for self
- * - Bearer CRON_SECRET: emit for any userId
+ * Internal cron emission only. Patient referral requests use /api/referrals/request.
  */
 export async function POST(req: Request) {
   let json: unknown;
@@ -38,29 +36,19 @@ export async function POST(req: Request) {
     );
   }
 
-  const cron = authorizedAsCron(req);
-  let userId = parsed.data.userId;
+  if (!authorizedAsCron(req)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
-  if (cron) {
-    if (!userId) {
-      return NextResponse.json(
-        { error: "userId required for cron emit" },
-        { status: 400 },
-      );
-    }
-  } else {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    userId = user.id;
+  if (parsed.data.eventType === "care_referral") {
+    return NextResponse.json(
+      { error: "Care referrals must use the verified referral route." },
+      { status: 403 },
+    );
   }
 
   const result = await emitMakeEvent({
-    userId: userId!,
+    userId: parsed.data.userId,
     eventType: parsed.data.eventType,
     data: parsed.data.data,
   });

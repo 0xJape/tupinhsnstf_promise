@@ -1,0 +1,176 @@
+P.R.O.M.I.S.E. — Basic Panel Questions and Answers
+
+1. What is P.R.O.M.I.S.E.?
+
+P.R.O.M.I.S.E. is a website that helps young women learn more about their menstrual health and possible PCOS-related signs.
+
+2. What does P.R.O.M.I.S.E. stand for?
+
+It stands for PCOS Risk Observation, Monitoring, Intervention, Screening, and Education.
+
+3. Why did your group create this project?
+
+We created it because many young women may not know which menstrual or physical changes are worth discussing with a healthcare professional. Our project gives them simple information and a way to monitor their health.
+
+4. What is PCOS?
+
+PCOS is a health condition that can affect periods, hormones, skin, hair, and other parts of the body. Only a qualified healthcare professional can diagnose it.
+
+5. Can your website diagnose PCOS?
+
+No. Our website only provides a risk screening. It does not diagnose PCOS or replace a doctor.
+
+6. Who can use P.R.O.M.I.S.E.?
+
+Our main users are young women ages 12 to 24. The website is designed to be simple and easy to use on a phone.
+
+7. What can users do on the website?
+
+Users can answer screening questions, record period dates and symptoms, view possible risk factors, read health information, and prepare questions for a clinic visit.
+
+8. How does the screening work?
+
+Users answer questions about their periods, symptoms, family history, lifestyle, and other health information. The system reviews their answers and gives a Low, Moderate, or High screening result.
+
+9. What does a High result mean?
+
+A High result means the answers show several factors that may be worth discussing with a healthcare professional. It does not mean the user definitely has PCOS.
+
+10. What should a user do after a Moderate or High result?
+
+The user should consider speaking with a doctor, nurse, or other qualified healthcare professional. They can also bring their result and questions to the consultation.
+
+11. Why can users record their period?
+
+Recording periods helps users notice patterns, such as changes in cycle length, missed periods, or unusual symptoms. These records can also help during a medical consultation.
+
+12. Does the website give medicine or treatment?
+
+No. It only gives general health education. It does not recommend medicines, give doses, or tell users to start or stop treatment.
+
+13. What is the purpose of the AI assistant?
+
+The AI assistant explains general health information and helps users understand their screening result. It is not a doctor and cannot diagnose or treat anyone.
+
+14. Can the AI change a user's result?
+
+No. The screening result is calculated by the website's fixed rules. The AI can explain the result, but it cannot change the score or category.
+
+15. What happens during an emergency?
+
+The website does not provide emergency care. Users with severe pain, heavy bleeding, fainting, thoughts of self-harm, or another urgent concern should contact emergency services, a healthcare professional, or a trusted adult immediately.
+
+16. How do you protect user information?
+
+Users need an account to access personal features. Their information is kept in protected storage, and users should only be able to access their own records. We also avoid sending unnecessary personal information to the AI.
+
+17. Why does the website ask for consent?
+
+Consent makes sure users understand what information the website collects and how it is used. It also explains the AI feature, notifications, and the fact that the website is not a diagnostic tool.
+
+18. Can users use the website on a phone?
+
+Yes. We designed it mobile-first because many users are more likely to access it through a phone. The layout can also work on larger screens.
+
+19. How did you test the website?
+
+We tested the main features, including registration, onboarding, period logging, screening, result pages, the AI assistant, and safety messages. We also checked the screening calculations and tested the website on smaller screens.
+
+20. What improvements can you make in the future?
+
+Future improvements could include more health education, more testing with actual users, improved accessibility, more local healthcare resources, and review from healthcare professionals.
+
+Short answer to remember
+
+P.R.O.M.I.S.E. is an educational screening and tracking website. It helps users understand possible risk factors, but it does not diagnose PCOS or replace professional medical advice.
+
+Additional Easy Security and AI Questions
+
+21. Why do users need to log in?
+
+Login helps protect personal information. It makes sure each user can access their own profile, period records, and screening results.
+
+22. Can another user see my health records?
+
+No. Each user's records are connected to their own account. The system is designed so users cannot access another user's personal information.
+
+23. What is a password safety rule your system follows?
+
+Passwords should be kept private and should never be shared with other people. Our application also keeps important system keys on the server instead of showing them in the website code.
+
+24. What happens if a user enters incorrect information?
+
+The website checks important inputs and shows an error when information is missing or invalid. Users can correct their answers before submitting them.
+
+25. Why should users avoid sharing private information with the AI?
+
+The AI only needs the question and limited information to provide education. Users should never share passwords, one-time codes, payment details, or other unnecessary private information.
+
+26. Is the AI always correct?
+
+No. AI can make mistakes, so its answers should be treated as general educational information. Users should ask a healthcare professional about medical concerns.
+
+27. How do you stop the AI from giving a diagnosis?
+
+We give the AI clear instructions that it must not diagnose, prescribe medicine, or change screening results. The website also reminds users that the AI is not a doctor.
+
+28. Can the AI make the screening result lower or higher?
+
+No. The result is calculated separately using the website's fixed screening rules. The AI only explains the result that already exists.
+
+29. What happens if the AI service is unavailable?
+
+The website can show a prepared safety message instead of leaving the user without an answer. The main screening and tracking features can still work separately from the AI.
+
+30. Why is human medical advice still important?
+
+The website uses self-reported information and cannot perform a physical examination or medical tests. A healthcare professional can properly assess the user's situation and provide appropriate advice.
+
+Technical Structure Questions — Easy Explanations
+
+31. What programming language did you use?
+
+We mainly used TypeScript. TypeScript is based on JavaScript, but it also helps us catch certain mistakes while building the website. We used it for the pages, forms, screening rules, and server functions.
+
+32. What framework did you use?
+
+We used Next.js with React. React helps us build reusable parts of the website, such as buttons, forms, cards, and navigation. Next.js helps organize the pages and handle server-side features.
+
+33. What did you use for the design?
+
+We used Tailwind CSS for styling. It helped us create the mobile-first layout, colors, spacing, buttons, and responsive design without writing large separate style files.
+
+34. What is the difference between the front end and back end in your website?
+
+The front end is what users see and interact with, such as the screening form and dashboard. The back end handles tasks users should not control directly, such as checking data, calculating results, saving records, and calling the AI service.
+
+35. What database did you use?
+
+We used Supabase, which provides user accounts and a PostgreSQL database. It stores profiles, period logs, screening results, referrals, and other application records.
+
+36. How does a page communicate with the database?
+
+When a user submits information, the page sends it to a protected server route. The server checks the user and the information, then reads or saves the record in Supabase. The result is sent back to the page for display.
+
+37. What AI is used in P.R.O.M.I.S.E.?
+
+We use Groq as our main AI provider for the health assistant. It can help generate educational explanations and responses. Gemini is planned as an optional fallback, while a prepared message is used if no AI provider is available.
+
+38. Did you train the AI using your own data?
+
+No. We did not train our own AI model. We use an existing AI provider and give it carefully written instructions, called a system prompt. We also send only limited information needed for the user's question.
+
+39. How does the AI know what answer to give?
+
+The AI receives the user's question, limited screening information when needed, and our safety instructions. These instructions tell it to provide education, avoid diagnosis, avoid medicine prescriptions, and recommend professional help when appropriate.
+
+40. How did you connect the AI to the website?
+
+The website sends questions through a protected server route to the AI provider. The provider returns an answer, and the website displays it to the user. The secret API key stays on the server and is not exposed in the browser.
+
+Reference Videos
+
+https://youtube.com/shorts/gmIzqE1mxsU?si=iciLn0U1OP9pOJKC
+
+https://youtube.com/shorts/gbNyX76pXxA?si=pNd9lbJa1pyOuHIt
+

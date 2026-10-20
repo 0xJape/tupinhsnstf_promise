@@ -35,7 +35,6 @@ type Props = {
 export function ScoreRing({ score, maxScore, category, className }: Props) {
   const safeMax = maxScore > 0 ? maxScore : 1;
   const clamped = Math.min(Math.max(score, 0), safeMax);
-  const pct = Math.round((clamped / safeMax) * 100);
 
   const size = 188;
   const strokeWidth = 14;
@@ -50,7 +49,7 @@ export function ScoreRing({ score, maxScore, category, className }: Props) {
         className,
       )}
       role="img"
-      aria-label={`Score ${score} of ${maxScore}, ${pct} percent, ${category} risk`}
+      aria-label={`Screening score ${score} points of ${maxScore}, ${category} level`}
     >
       <div
         aria-hidden
@@ -93,11 +92,11 @@ export function ScoreRing({ score, maxScore, category, className }: Props) {
             labelTone[category],
           )}
         >
-          {pct}
-          <span className="text-lg font-semibold opacity-60">%</span>
+          {score}
+          <span className="ml-1 text-sm font-semibold opacity-60">pts</span>
         </p>
         <p className="mt-0.5 text-[10px] font-semibold tracking-[0.16em] text-muted-foreground uppercase">
-          {score}/{maxScore}
+          Screening score
         </p>
       </div>
     </div>

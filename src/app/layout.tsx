@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { DM_Sans, Geist, Geist_Mono, Nunito } from "next/font/google";
 import { ThemeProvider } from "@/components/shared/ThemeProvider";
 import { Toaster } from "@/components/ui/sonner";
+import { PromiseInitializer } from "@/components/marketing/PromiseInitializer";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -35,13 +36,12 @@ export const metadata: Metadata = {
   },
   description:
     "PCOS Risk Observation, Monitoring, Intervention, Screening, and Education — educational screening, not diagnosis.",
-  // App Router also serves src/app/favicon.ico, icon.png, apple-icon.png
+  // Brand mark used for browser and installed-app icons.
   icons: {
     icon: [
-      { url: "/favicon.ico", sizes: "any" },
-      { url: "/brand/promise_logo_icon.png", type: "image/png", sizes: "192x192" },
+      { url: "/brand/promiselogo.png", type: "image/png" },
     ],
-    apple: [{ url: "/brand/promise_logo_icon.png", type: "image/png", sizes: "180x180" }],
+    apple: [{ url: "/brand/promiselogo.png", type: "image/png" }],
   },
 };
 
@@ -59,12 +59,13 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      data-scroll-behavior="smooth"
       suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} ${nunito.variable} ${dmSans.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col text-foreground">
         <ThemeProvider>
-          {children}
+          <PromiseInitializer>{children}</PromiseInitializer>
           <Toaster />
         </ThemeProvider>
       </body>

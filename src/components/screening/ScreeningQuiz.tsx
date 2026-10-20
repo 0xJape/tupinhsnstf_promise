@@ -1,10 +1,18 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ArrowRight, Check } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   QUESTION_HINTS,
   QUESTION_PROMPTS,
@@ -14,20 +22,42 @@ import { BOOLEAN_QUESTION_IDS, QUESTION_LABELS } from "@/lib/rules/pcosScreen";
 import { cn } from "@/lib/utils";
 import type { BooleanQuestionId, ScreeningAnswers } from "@/types/screening";
 
-type Props = {
-  heightCm?: number | null;
-  weightKg?: number | null;
-  bmi?: number | null;
-  ageYears?: number | null;
-};
+const DRAFT_KEY = "promise:screening-draft:v2";
+type ScreeningDraft = { answers?: Partial<ScreeningAnswers>; menarche?: string; step?: number };
 
-export function ScreeningQuiz({ heightCm, weightKg, bmi, ageYears }: Props) {
+export function ScreeningQuiz() {
   const router = useRouter();
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<Partial<ScreeningAnswers>>({});
   const [menarche, setMenarche] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const titleRef = useRef<HTMLHeadingElement>(null);
+  const hydratedRef = useRef(false);
+
+  useEffect(() => {
+    let saved: ScreeningDraft | null = null;
+    try {
+      saved = JSON.parse(localStorage.getItem(DRAFT_KEY) ?? "null") as ScreeningDraft | null;
+    } catch { localStorage.removeItem(DRAFT_KEY); }
+    const frame = requestAnimationFrame(() => {
+      if (saved) {
+        setAnswers(saved.answers ?? {});
+        setMenarche(saved.menarche ?? "");
+        setStep(Math.min(saved.step ?? 0, QUIZ_GROUPS.length));
+      }
+      hydratedRef.current = true;
+    });
+    return () => cancelAnimationFrame(frame);
+  }, []);
+
+  useEffect(() => {
+    if (!hydratedRef.current) return;
+    localStorage.setItem(DRAFT_KEY, JSON.stringify({ answers, menarche, step }));
+  }, [answers, menarche, step]);
+
+  useEffect(() => { titleRef.current?.focus(); }, [step]);
 
   const isReview = step >= QUIZ_GROUPS.length;
   const group = !isReview ? QUIZ_GROUPS[step] : null;
@@ -74,11 +104,6 @@ export function ScreeningQuiz({ heightCm, weightKg, bmi, ageYears }: Props) {
           ),
         },
       };
-      if (heightCm != null && heightCm > 0) body.heightCm = heightCm;
-      if (weightKg != null && weightKg > 0) body.weightKg = weightKg;
-      if (bmi != null && bmi > 0) body.bmi = bmi;
-      if (ageYears != null && ageYears > 0) body.ageYears = ageYears;
-
       const res = await fetch("/api/screening", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -91,7 +116,8 @@ export function ScreeningQuiz({ heightCm, weightKg, bmi, ageYears }: Props) {
       if (!res.ok || !data.id) {
         throw new Error(data.error ?? "Could not save screening");
       }
-      router.push(`/screen/result/${data.id}`);
+      localStorage.removeItem(DRAFT_KEY);
+      router.push(`/screen/result/${data.id}?submitted=1`);
       router.refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Submit failed");
@@ -136,6 +162,8 @@ export function ScreeningQuiz({ heightCm, weightKg, bmi, ageYears }: Props) {
             <p className="section-label text-primary">{group.title}</p>
             <h2
               id="quiz-group-title"
+              ref={titleRef}
+              tabIndex={-1}
               className="text-xl font-semibold tracking-tight"
             >
               {group.blurb}
@@ -170,7 +198,10 @@ export function ScreeningQuiz({ heightCm, weightKg, bmi, ageYears }: Props) {
                   }}
                   className="mt-3 min-h-12 rounded-xl"
                   placeholder="e.g. 12"
+                  aria-describedby="menarche-help menarche-error"
                 />
+                <p id="menarche-help" className="mt-2 text-xs text-muted-foreground">Enter an age from 8 to 18.</p>
+                {menarche && !menarcheOk ? <p id="menarche-error" className="mt-1 text-xs font-medium text-destructive" role="alert">Use a number from 8 to 18.</p> : null}
               </li>
             ) : null}
             {group.questions.map((id) => (
@@ -209,6 +240,8 @@ export function ScreeningQuiz({ heightCm, weightKg, bmi, ageYears }: Props) {
             <p className="section-label text-primary">Almost done</p>
             <h2
               id="quiz-review-title"
+              ref={titleRef}
+              tabIndex={-1}
               className="text-xl font-semibold tracking-tight"
             >
               Review answers
@@ -218,43 +251,7 @@ export function ScreeningQuiz({ heightCm, weightKg, bmi, ageYears }: Props) {
             </p>
           </header>
 
-          <div className="surface-card overflow-hidden divide-y divide-border">
-            <div className="flex items-start justify-between gap-3 px-4 py-3">
-              <div className="min-w-0">
-                <p className="text-sm font-medium leading-snug">
-                  {QUESTION_LABELS.menarcheAgeYears}
-                </p>
-              </div>
-              <span className="shrink-0 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
-                {menarcheNum}
-              </span>
-            </div>
-            {BOOLEAN_QUESTION_IDS.map((id) => (
-              <div
-                key={id}
-                className="flex items-start justify-between gap-3 px-4 py-3"
-              >
-                <div className="min-w-0">
-                  <p className="text-sm font-medium leading-snug">
-                    {QUESTION_LABELS[id]}
-                  </p>
-                  <p className="mt-0.5 text-xs text-muted-foreground line-clamp-2">
-                    {QUESTION_PROMPTS[id]}
-                  </p>
-                </div>
-                <span
-                  className={cn(
-                    "shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold",
-                    answers[id]
-                      ? "bg-primary/10 text-primary"
-                      : "bg-muted text-muted-foreground",
-                  )}
-                >
-                  {answers[id] ? "Yes" : "No"}
-                </span>
-              </div>
-            ))}
-          </div>
+          <div className="space-y-3">{QUIZ_GROUPS.map((reviewGroup, groupIndex) => <div key={reviewGroup.id} className="surface-card overflow-hidden"><div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3"><div><p className="section-label text-primary">Group {reviewGroup.id}</p><p className="text-sm font-semibold">{reviewGroup.title}</p></div><Button type="button" size="sm" variant="ghost" className="rounded-xl" onClick={() => setStep(groupIndex)}><Pencil className="size-3.5" />Edit</Button></div><div className="divide-y divide-border">{reviewGroup.includeMenarche ? <ReviewRow label={QUESTION_LABELS.menarcheAgeYears} value={String(menarcheNum)} /> : null}{reviewGroup.questions.map((id) => <ReviewRow key={id} label={QUESTION_LABELS[id]} value={answers[id] ? "Yes" : "No"} />)}</div></div>)}</div>
         </section>
       )}
 
@@ -296,15 +293,27 @@ export function ScreeningQuiz({ heightCm, weightKg, bmi, ageYears }: Props) {
             size="lg"
             className="min-h-11 flex-1 rounded-xl"
             disabled={!allComplete || submitting}
-            onClick={submit}
+            onClick={() => setConfirmOpen(true)}
           >
             {submitting ? "Scoring…" : "Submit"}
             <Check className="size-4" aria-hidden />
           </Button>
         )}
       </div>
+      <div className="flex justify-center"><Button type="button" variant="ghost" size="sm" className="text-muted-foreground" disabled={submitting} onClick={() => { localStorage.removeItem(DRAFT_KEY); setAnswers({}); setMenarche(""); setStep(0); }}><Trash2 className="size-4" />Discard saved progress</Button></div>
+
+      <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <DialogContent className="max-w-[calc(100%-2rem)] rounded-[2rem] sm:max-w-md">
+          <DialogHeader><DialogTitle>Submit your baseline screening?</DialogTitle><DialogDescription>Your answers will be scored with fixed educational rules. This cannot diagnose PCOS. After submission, you can review this baseline or request a correction, but cannot retake it.</DialogDescription></DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-2"><Button type="button" variant="outline" onClick={() => setConfirmOpen(false)}>Keep reviewing</Button><Button type="button" disabled={submitting} onClick={() => void submit()}>{submitting ? "Scoring…" : "Submit screening"}<Check className="size-4" /></Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
+}
+
+function ReviewRow({ label, value }: { label: string; value: string }) {
+  return <div className="flex items-start justify-between gap-3 px-4 py-3"><p className="text-sm font-medium leading-snug">{label}</p><span className="shrink-0 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">{value}</span></div>;
 }
 
 function YesNoButton({

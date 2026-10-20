@@ -5,19 +5,6 @@ import { DisclaimerBanner } from "@/components/shared/DisclaimerBanner";
 import { ScreeningQuiz } from "@/components/screening/ScreeningQuiz";
 import { createClient } from "@/lib/supabase/server";
 
-function ageYearsFromDob(dob: string | null | undefined): number | undefined {
-  if (!dob) return undefined;
-  const birth = new Date(`${dob}T00:00:00`);
-  if (Number.isNaN(birth.getTime())) return undefined;
-  const today = new Date();
-  let age = today.getFullYear() - birth.getFullYear();
-  const monthDiff = today.getMonth() - birth.getMonth();
-  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-    age -= 1;
-  }
-  return age > 0 ? age : undefined;
-}
-
 export default async function ScreenQuizPage() {
   const supabase = await createClient();
   const {
@@ -25,11 +12,14 @@ export default async function ScreenQuizPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("height_cm, weight_kg, bmi, date_of_birth")
-    .eq("id", user.id)
+  const { data: baseline } = await supabase
+    .from("risk_assessments")
+    .select("id")
+    .eq("user_id", user.id)
+    .eq("assessment_type", "baseline")
+    .eq("record_status", "valid")
     .maybeSingle();
+  if (baseline) redirect(`/screen/result/${baseline.id}`);
 
   return (
     <>
@@ -55,12 +45,7 @@ export default async function ScreenQuizPage() {
 
       <DisclaimerBanner compact />
 
-      <ScreeningQuiz
-        heightCm={profile?.height_cm}
-        weightKg={profile?.weight_kg}
-        bmi={profile?.bmi}
-        ageYears={ageYearsFromDob(profile?.date_of_birth)}
-      />
+      <ScreeningQuiz />
     </>
   );
 }

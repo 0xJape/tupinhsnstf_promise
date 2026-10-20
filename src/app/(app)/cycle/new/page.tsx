@@ -3,7 +3,7 @@ import { format } from "date-fns";
 import { ArrowLeft } from "lucide-react";
 import { savePeriodLog } from "@/app/(app)/cycle/actions";
 import { buttonVariants } from "@/components/ui/button";
-import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -130,9 +130,9 @@ export default async function Page({ searchParams }: Props) {
           />
         </div>
 
-        <Button type="submit" size="lg" className="min-h-12 w-full rounded-xl">
+        <SubmitButton pendingLabel="Saving…" size="lg" className="min-h-12 w-full rounded-xl">
           Save period log
-        </Button>
+        </SubmitButton>
       </form>
     </div>
   );

@@ -8,7 +8,7 @@ type Props = {
   priority?: boolean;
 };
 
-/** App mark from public/brand/promise_logo.png */
+/** App mark from public/brand/promiselogo.png */
 export function BrandLogo({ className, size = 32, priority }: Props) {
   return (
     <span
@@ -19,7 +19,7 @@ export function BrandLogo({ className, size = 32, priority }: Props) {
       style={{ width: size, height: size }}
     >
       <Image
-        src="/brand/promise_logo.png"
+        src="/brand/promiselogo.png"
         alt=""
         fill
         sizes={`${size}px`}

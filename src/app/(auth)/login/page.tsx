@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -32,8 +33,15 @@ async function login(formData: FormData) {
     redirect(`/login?error=${encodeURIComponent(error?.message ?? "Login failed")}`);
   }
 
-  // Dashboard-created users may lack app rows — seed minimal profile.
   const admin = createAdminClient();
+  const { data: membership } = await admin
+    .from("admin_memberships")
+    .select("active, role")
+    .eq("user_id", data.user.id)
+    .maybeSingle();
+  if (membership?.active) redirect(membership.role === "referral_staff" ? "/admin/referrals" : "/admin");
+
+  // Dashboard-created participant users may lack app rows — seed minimal profile.
   const { data: existing } = await admin
     .from("profiles")
     .select("id")
@@ -138,9 +146,9 @@ export default async function LoginPage({
           </div>
         </CardContent>
         <CardFooter className="flex flex-col gap-3">
-          <Button type="submit" className="min-h-12 w-full rounded-xl">
+          <SubmitButton pendingLabel="Logging in…" className="min-h-12 w-full rounded-xl">
             Log in
-          </Button>
+          </SubmitButton>
           <p className="text-center text-sm text-muted-foreground">
             No account?{" "}
             <Link

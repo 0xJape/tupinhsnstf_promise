@@ -11,6 +11,8 @@ type Props = {
 export function SeekCareReferral({ assessmentId }: Props) {
   const [consent, setConsent] = useState(false);
   const [note, setNote] = useState("");
+  const [scheduleCall, setScheduleCall] = useState(false);
+  const [preferredCallAt, setPreferredCallAt] = useState("");
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -18,6 +20,10 @@ export function SeekCareReferral({ assessmentId }: Props) {
 
   async function submit() {
     if (!consent || busy) return;
+    if (scheduleCall && (!preferredCallAt || new Date(preferredCallAt).getTime() <= Date.now())) {
+      setError("Choose a future date and time.");
+      return;
+    }
     setBusy(true);
     setError(null);
     setInfo(null);
@@ -29,6 +35,10 @@ export function SeekCareReferral({ assessmentId }: Props) {
           assessmentId,
           consentShare: true,
           note: note.trim() || undefined,
+          preferredCallAt: scheduleCall ? preferredCallAt : undefined,
+          timeZone: scheduleCall
+            ? Intl.DateTimeFormat().resolvedOptions().timeZone
+            : undefined,
         }),
       });
       const json = (await res.json()) as {
@@ -42,7 +52,7 @@ export function SeekCareReferral({ assessmentId }: Props) {
         return;
       }
       setDone(true);
-      setInfo(json.message ?? "Referral sent.");
+      setInfo(json.message ?? "Referral request submitted.");
     } catch {
       setError("Network error. Try again.");
     } finally {
@@ -61,7 +71,7 @@ export function SeekCareReferral({ assessmentId }: Props) {
           <p className="font-semibold text-emerald-950">Referral requested</p>
           <p className="leading-relaxed text-emerald-950/80">
             {info ??
-              "Your screening summary was sent to the care team. This is not a diagnosis."}
+              "Your screening summary was submitted to the care team. This is not a diagnosis."}
           </p>
         </div>
       </div>
@@ -106,10 +116,43 @@ export function SeekCareReferral({ assessmentId }: Props) {
           value={note}
           onChange={(e) => setNote(e.target.value.slice(0, 500))}
           rows={2}
-          placeholder="e.g. best time to call, symptoms that worry me…"
+          placeholder="Symptoms or concerns you want to discuss…"
           className="w-full resize-none rounded-2xl border border-amber-200/50 bg-card px-3 py-2 text-sm text-amber-950 outline-none ring-amber-400/40 placeholder:text-amber-950/40 focus:ring-2 dark:border-amber-500/30 dark:text-amber-100 dark:placeholder:text-amber-100/40"
         />
       </label>
+
+      <div className="space-y-2">
+        <label className="flex cursor-pointer items-center gap-2.5 text-sm text-amber-950 dark:text-amber-100">
+          <input
+            type="checkbox"
+            className="size-4 shrink-0 accent-amber-700"
+            checked={scheduleCall}
+            onChange={(e) => {
+              setScheduleCall(e.target.checked);
+              if (!e.target.checked) setPreferredCallAt("");
+            }}
+          />
+          Choose a preferred callback time
+        </label>
+
+        {scheduleCall ? (
+          <label className="block space-y-1.5">
+            <span className="text-xs font-semibold text-amber-950/80">
+              Preferred date and time
+            </span>
+            <input
+              type="datetime-local"
+              value={preferredCallAt}
+              onChange={(e) => setPreferredCallAt(e.target.value)}
+              required
+              className="w-full rounded-2xl border border-amber-200/50 bg-card px-3 py-2.5 text-sm text-amber-950 outline-none ring-amber-400/40 focus:ring-2 dark:border-amber-500/30 dark:text-amber-100"
+            />
+            <span className="block text-[11px] leading-relaxed text-amber-950/60 dark:text-amber-100/60">
+              Local time. Exact availability may vary.
+            </span>
+          </label>
+        ) : null}
+      </div>
 
       {error ? (
         <p className="text-xs font-medium text-rose-700" role="alert">
@@ -120,7 +163,7 @@ export function SeekCareReferral({ assessmentId }: Props) {
       <Button
         type="button"
         size="lg"
-        disabled={!consent || busy}
+        disabled={!consent || (scheduleCall && !preferredCallAt) || busy}
         onClick={() => void submit()}
         className="w-full rounded-2xl bg-amber-800 text-white hover:bg-amber-900 disabled:opacity-50"
       >

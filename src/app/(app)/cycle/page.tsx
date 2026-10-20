@@ -1,10 +1,13 @@
 ﻿import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Plus, Trash2 } from "lucide-react";
+import { ArrowRight, CheckCircle2, ClipboardList, Droplets, Plus, Trash2 } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { Button } from "@/components/ui/button";
 import { CycleCalendar } from "@/components/cycle/CycleCalendar";
 import { CycleInsightsCard } from "@/components/cycle/CycleInsightsCard";
+import { PhaseGuide } from "@/components/cycle/PhaseGuide";
+import { FirstLogButton } from "@/components/cycle/FirstLogButton";
+import { PatternSummary } from "@/components/cycle/PatternSummary";
 import { deletePeriodLog } from "@/app/(app)/cycle/actions";
 import {
   computeCycleInsights,
@@ -52,6 +55,22 @@ export default async function CyclePage({ searchParams }: Props) {
     insights.avgPeriodLength,
     cycleLen,
   );
+  const today = new Date().toLocaleDateString("en-CA");
+  const { data: todayCheckIn } = await supabase
+    .from("daily_wellness_logs")
+    .select("id")
+    .eq("user_id", user.id)
+    .eq("log_date", today)
+    .maybeSingle();
+  const { data: recentDailyLogs } = await supabase
+    .from("daily_wellness_logs")
+    .select("id")
+    .eq("user_id", user.id)
+    .order("log_date", { ascending: false })
+    .limit(14);
+  const logPeriod = insights.status === "period_window" || insights.status === "delayed" || !logs.length;
+  const nextHref = logPeriod ? "/cycle/new?guided=1" : "/track?guided=1";
+  const nextLabel = logPeriod ? "Log a period start" : todayCheckIn ? "View today’s check-in" : "Check in today";
 
   return (
     <div className="space-y-5">
@@ -59,7 +78,7 @@ export default async function CyclePage({ searchParams }: Props) {
         <div className="space-y-1">
           <h1 className="text-2xl font-semibold tracking-tight">Cycle</h1>
           <p className="text-sm text-muted-foreground">
-            Log periods, see phase estimates, next period, and delay.
+            Today first. Your calendar stays below.
           </p>
         </div>
         <Link
@@ -80,13 +99,33 @@ export default async function CyclePage({ searchParams }: Props) {
         </p>
       ) : null}
 
-      <CycleInsightsCard insights={insights} />
+      <section className="cycle-today-card overflow-hidden rounded-[2rem] p-5" aria-label="Today in your cycle">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="section-label text-primary">Today</p>
+            <h2 className="mt-1 text-3xl font-bold tracking-tight">{insights.cycleDay ? `Cycle day ${insights.cycleDay}` : "Start your picture"}</h2>
+            <p className="mt-2 max-w-[22rem] text-sm leading-relaxed text-muted-foreground">{insights.logCount >= 2 ? `${insights.phaseLabel} is an estimate from your logged dates.` : "Add period starts over time for more personal estimates."}</p>
+          </div>
+          <span className="cycle-day-orb" aria-hidden>{insights.cycleDay ?? "?"}</span>
+        </div>
+        <div className="mt-5 rounded-2xl bg-background/75 p-4 dark:bg-black/15">
+          <div className="flex items-center gap-3">
+            <span className="flex size-10 items-center justify-center rounded-2xl bg-primary text-primary-foreground">{todayCheckIn ? <CheckCircle2 className="size-5" /> : logPeriod ? <Droplets className="size-5" /> : <ClipboardList className="size-5" />}</span>
+            <div className="min-w-0 flex-1"><p className="font-semibold">{todayCheckIn ? "Checked in today" : logPeriod ? "One useful update" : "Your small next step"}</p><p className="text-xs leading-relaxed text-muted-foreground">{todayCheckIn ? "Your private note is saved. Come back tomorrow if useful." : logPeriod ? "If bleeding began, add its first day. Everything else is optional." : "A short self-report can help you notice patterns."}</p></div>
+          </div>
+          {!logs.length ? <FirstLogButton /> : <Link href={todayCheckIn ? "/track" : nextHref} className={cn(buttonVariants({ size: "lg" }), "mt-4 min-h-11 w-full rounded-xl")}>{nextLabel}<ArrowRight className="size-4" /></Link>}
+        </div>
+      </section>
 
-      <CycleCalendar
-        periodDates={periodDates}
-        expectedDates={expectedDates}
-        phaseDates={phaseDates}
-      />
+      {insights.status === "period_window" || insights.status === "delayed" ? <aside className="cycle-alert rounded-2xl px-4 py-3 text-sm leading-relaxed"><strong>{insights.status === "delayed" ? "No period start logged after your estimate." : "Estimated period window is here."}</strong>{" "}Cycles can vary. Log only if bleeding begins.</aside> : insights.logCount < 2 && logs.length ? <aside className="cycle-alert rounded-2xl px-4 py-3 text-sm leading-relaxed"><strong>One more logged start helps.</strong> Two or more cycle starts make estimates more personal.</aside> : null}
+
+      {insights.logCount >= 2 ? <PhaseGuide phase={insights.phase} cycleDay={insights.cycleDay} card /> : null}
+
+      <PatternSummary cycleLogCount={logs.length} dailyLogCount={recentDailyLogs?.length ?? 0} />
+
+      <details className="group"><summary className="cursor-pointer list-none rounded-2xl px-1 text-sm font-semibold text-muted-foreground">Cycle details <span className="ml-1 text-primary group-open:hidden">Show</span><span className="ml-1 hidden text-primary group-open:inline">Hide</span></summary><div className="pt-3"><CycleInsightsCard insights={insights} /></div></details>
+
+      <section className="space-y-3" aria-label="Cycle calendar"><div className="flex items-center justify-between px-1"><div><p className="section-label text-primary">History</p><h2 className="mt-1 text-lg font-semibold">Your cycle calendar</h2></div><span className="text-xs text-muted-foreground">Tap day to log</span></div><CycleCalendar periodDates={periodDates} expectedDates={expectedDates} phaseDates={phaseDates} /></section>
 
       <section className="space-y-3">
         <div className="flex items-center justify-between gap-2">
@@ -179,3 +218,4 @@ function formatDisplay(ymd: string) {
     year: "numeric",
   });
 }
+

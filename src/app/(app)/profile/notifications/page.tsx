@@ -1,6 +1,7 @@
 ﻿import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import {
   Card,
   CardContent,
@@ -161,9 +162,9 @@ export default async function NotificationsPage({ searchParams }: Props) {
             />
           </CardContent>
           <CardFooter className="flex flex-col gap-3">
-            <Button type="submit" className="min-h-12 w-full rounded-xl">
+            <SubmitButton pendingLabel="Saving…" className="min-h-12 w-full rounded-xl">
               Save preferences
-            </Button>
+            </SubmitButton>
             <Link
               href="/profile"
               className={cn(

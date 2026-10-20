@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -164,9 +165,9 @@ export default async function RegisterPage({ searchParams }: Props) {
             </div>
           </CardContent>
           <CardFooter className="flex flex-col gap-3">
-            <Button type="submit" className="min-h-12 w-full rounded-xl">
+            <SubmitButton pendingLabel="Creating account…" className="min-h-12 w-full rounded-xl">
               Register
-            </Button>
+            </SubmitButton>
             <p className="text-center text-sm text-muted-foreground">
               Have an account?{" "}
               <Link

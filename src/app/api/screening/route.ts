@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { emitMakeEvent } from "@/lib/make/emit";
 import { BOOLEAN_QUESTION_IDS, scoreAssessment } from "@/lib/rules/pcosScreen";
 import { createClient } from "@/lib/supabase/server";
 import type { ScreeningAnswers } from "@/types/screening";
@@ -30,10 +29,6 @@ const bodySchema = z.object({
     amhTested: z.boolean(),
     moodConcern: z.boolean(),
   }),
-  heightCm: z.number().positive().optional(),
-  weightKg: z.number().positive().optional(),
-  bmi: z.number().nonnegative().optional(),
-  ageYears: z.number().positive().max(120).optional(),
 });
 
 function ageYearsFromDob(dob: string | null | undefined): number | undefined {
@@ -73,6 +68,24 @@ export async function POST(req: Request) {
     );
   }
 
+  const { data: existingBaseline } = await supabase
+    .from("risk_assessments")
+    .select("id")
+    .eq("user_id", user.id)
+    .eq("assessment_type", "baseline")
+    .eq("record_status", "valid")
+    .maybeSingle();
+
+  if (existingBaseline) {
+    return NextResponse.json(
+      {
+        error: "Your baseline screening is already complete.",
+        existingBaselineId: existingBaseline.id,
+      },
+      { status: 409 },
+    );
+  }
+
   const answers = parsed.data.answers as ScreeningAnswers;
   for (const id of BOOLEAN_QUESTION_IDS) {
     if (typeof answers[id] !== "boolean") {
@@ -83,27 +96,15 @@ export async function POST(req: Request) {
     }
   }
 
-  let heightCm = parsed.data.heightCm;
-  let weightKg = parsed.data.weightKg;
-  let bmi = parsed.data.bmi;
-  let ageYears = parsed.data.ageYears;
-
-  if (
-    heightCm == null ||
-    weightKg == null ||
-    bmi == null ||
-    ageYears == null
-  ) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("height_cm, weight_kg, bmi, date_of_birth")
-      .eq("id", user.id)
-      .maybeSingle();
-    heightCm ??= profile?.height_cm ?? undefined;
-    weightKg ??= profile?.weight_kg ?? undefined;
-    bmi ??= profile?.bmi ?? undefined;
-    ageYears ??= ageYearsFromDob(profile?.date_of_birth);
-  }
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("height_cm, weight_kg, bmi, date_of_birth")
+    .eq("id", user.id)
+    .maybeSingle();
+  const heightCm = profile?.height_cm ?? undefined;
+  const weightKg = profile?.weight_kg ?? undefined;
+  const bmi = profile?.bmi ?? undefined;
+  const ageYears = ageYearsFromDob(profile?.date_of_birth);
 
   const result = scoreAssessment({
     answers,
@@ -129,31 +130,35 @@ export async function POST(req: Request) {
       category: result.category,
       contributing_factors: result.contributingFactors,
       referral_recommended: result.referralRecommended,
+      assessment_type: "baseline",
+      record_status: "valid",
+      source: "participant",
     })
     .select("id")
     .single();
+
+  if (error?.code === "23505") {
+    const { data: baseline } = await supabase
+      .from("risk_assessments")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("assessment_type", "baseline")
+      .eq("record_status", "valid")
+      .maybeSingle();
+    return NextResponse.json(
+      {
+        error: "Your baseline screening is already complete.",
+        existingBaselineId: baseline?.id,
+      },
+      { status: 409 },
+    );
+  }
 
   if (error || !row) {
     return NextResponse.json(
       { error: error?.message ?? "Could not save assessment" },
       { status: 500 },
     );
-  }
-
-  if (result.referralRecommended) {
-    void emitMakeEvent({
-      userId: user.id,
-      eventType: "elevated_risk_followup",
-      data: {
-        assessmentId: row.id,
-        category: result.category,
-        totalScore: result.totalScore,
-        factors: result.contributingFactors
-          .map((f) => f.label ?? f.id)
-          .slice(0, 8),
-      },
-      dedupeHours: 48,
-    }).catch((e) => console.error("elevated_risk emit", e));
   }
 
   return NextResponse.json({ id: row.id, result });

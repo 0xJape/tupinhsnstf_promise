@@ -44,7 +44,7 @@ export function ImageSlot({
             fill
             priority={priority}
             className="object-cover"
-            sizes="(max-width: 512px) 100vw, 512px"
+            sizes="(max-width: 767px) 100vw, (max-width: 1279px) 92vw, 1152px"
           />
         ) : (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 p-6 text-center">

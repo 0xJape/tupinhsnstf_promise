@@ -25,10 +25,10 @@ export function BottomNav() {
   return (
     <nav
       aria-label="Main"
-      className="fixed inset-x-0 bottom-0 z-40 px-3 pb-3"
+      className="fixed inset-x-0 bottom-0 z-40 px-3 pb-3 lg:hidden"
       style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
     >
-      <div className="glass-nav mx-auto flex max-w-lg items-stretch justify-between gap-0.5 rounded-[28px] p-1.5">
+      <div className="cinematic-bottom-nav mx-auto flex max-w-lg items-stretch justify-between gap-0.5 rounded-[28px] p-1.5">
         {tabs.map(({ href, label, icon: Icon }) => {
           const active =
             pathname === href || pathname.startsWith(`${href}/`);
@@ -39,8 +39,8 @@ export function BottomNav() {
               className={cn(
                 "flex min-h-12 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-[20px] px-1 text-[10px] font-bold active:scale-[0.97]",
                 active
-                  ? "bg-gradient-to-br from-primary/90 to-primary text-primary-foreground shadow-[8px_8px_16px_color-mix(in_oklab,var(--primary)_35%,transparent),inset_2px_2px_6px_rgba(255,255,255,0.25)]"
-                  : "text-muted-foreground hover:bg-accent hover:text-primary",
+                  ? "bg-gradient-to-br from-rose-400 to-rose-600 text-white shadow-[0_8px_16px_rgba(109,16,52,0.38)]"
+                  : "text-rose-100/70 hover:bg-white/10 hover:text-white",
               )}
             >
               <Icon

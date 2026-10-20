@@ -1,8 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { useRouter } from "next/navigation";
-import { Camera, ImagePlus, Loader2, Send, Volume2, VolumeX, X } from "lucide-react";
+import { Camera, ImagePlus, Loader2, Mic, Send, Square, Volume2, VolumeX, X } from "lucide-react";
 import {
   EducationSceneStrip,
   sceneExplainPrompt,
@@ -12,6 +11,13 @@ import { Promi } from "@/components/promi/Promi";
 import { DisclaimerBanner } from "@/components/shared/DisclaimerBanner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { SUGGESTED_PROMPTS } from "@/lib/ai/prompt";
 import { canSpeak, speakText, stopSpeaking } from "@/lib/ai/tts";
 import { cn } from "@/lib/utils";
@@ -71,7 +77,6 @@ export function AssistantChat({
   initialMessages = [],
   relatedAssessmentId,
 }: Props) {
-  const router = useRouter();
   const [conversationId, setConversationId] = useState(initialConversationId);
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
   const [input, setInput] = useState("");
@@ -84,10 +89,15 @@ export function AssistantChat({
     () => false,
   );
   const [image, setImage] = useState<PendingImage | null>(null);
+  const [talkOpen, setTalkOpen] = useState(false);
+  const [recording, setRecording] = useState(false);
+  const [transcribing, setTranscribing] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const cameraRef = useRef<HTMLInputElement>(null);
   const abortRef = useRef(false);
+  const recorderRef = useRef<MediaRecorder | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
 
   const onPickFile = useCallback((file: File | undefined) => {
     if (!file) return;
@@ -111,6 +121,7 @@ export function AssistantChat({
   useEffect(() => {
     return () => {
       stopSpeaking();
+      streamRef.current?.getTracks().forEach((track) => track.stop());
       if (image?.previewUrl) URL.revokeObjectURL(image.previewUrl);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- cleanup on unmount only
@@ -121,6 +132,10 @@ export function AssistantChat({
       if (prev?.previewUrl) URL.revokeObjectURL(prev.previewUrl);
       return null;
     });
+  }, []);
+
+  const stopRecording = useCallback(() => {
+    recorderRef.current?.stop();
   }, []);
 
   const send = useCallback(
@@ -178,7 +193,7 @@ export function AssistantChat({
         const nextId = data.conversationId!;
         if (!conversationId && nextId) {
           setConversationId(nextId);
-          router.replace(`/assistant/${nextId}`);
+          window.history.replaceState(null, "", `/assistant/${nextId}`);
         }
 
         const reply = data.assistantMessage ?? "";
@@ -193,7 +208,7 @@ export function AssistantChat({
 
         // TTS reads the text reply only — never the image bytes
         if (ttsOn && ttsSupported && reply && !abortRef.current) {
-          speakText(reply);
+          void speakText(reply);
         }
       } catch (e) {
         setError(e instanceof Error ? e.message : "Chat failed");
@@ -209,11 +224,61 @@ export function AssistantChat({
       image,
       pending,
       relatedAssessmentId,
-      router,
       ttsOn,
       ttsSupported,
     ],
   );
+
+  const transcribeAndSend = useCallback(
+    async (audio: Blob) => {
+      setTranscribing(true);
+      try {
+        const form = new FormData();
+        form.append("audio", audio, "voice.webm");
+        const res = await fetch("/api/ai/transcribe", { method: "POST", body: form });
+        const data = (await res.json()) as { text?: string; error?: string };
+        if (!res.ok || !data.text) throw new Error(data.error ?? "Could not transcribe voice");
+        setTalkOpen(false);
+        await send(data.text);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Could not transcribe voice");
+      } finally {
+        setTranscribing(false);
+      }
+    },
+    [send],
+  );
+
+  const startRecording = useCallback(async () => {
+    if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) {
+      setError("Voice recording is not supported in this browser");
+      return;
+    }
+    try {
+      setError(null);
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+      const chunks: Blob[] = [];
+      const recorder = new MediaRecorder(stream);
+      recorderRef.current = recorder;
+      recorder.ondataavailable = (event) => {
+        if (event.data.size) chunks.push(event.data);
+      };
+      recorder.onstop = () => {
+        recorderRef.current = null;
+        stream.getTracks().forEach((track) => track.stop());
+        streamRef.current = null;
+        setRecording(false);
+        const audio = new Blob(chunks, { type: recorder.mimeType || "audio/webm" });
+        if (audio.size) void transcribeAndSend(audio);
+      };
+      recorder.start();
+      setRecording(true);
+    } catch {
+      setError("Microphone permission is needed for voice input");
+      setTalkOpen(false);
+    }
+  }, [transcribeAndSend]);
 
   const promiLine = pending
     ? image || messages.some((m) => m.imagePreviewUrl)
@@ -318,6 +383,17 @@ export function AssistantChat({
                 />
               ) : null}
               <p className="whitespace-pre-wrap">{m.content}</p>
+              {m.role === "assistant" && ttsSupported ? (
+                <button
+                  type="button"
+                  onClick={() => void speakText(m.content)}
+                  className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground"
+                  aria-label="Read this reply aloud"
+                >
+                  <Volume2 className="size-3.5" aria-hidden />
+                  Read aloud
+                </button>
+              ) : null}
             </div>
           ))}
           {pending ? (
@@ -430,6 +506,19 @@ export function AssistantChat({
             }}
           />
           <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            disabled={pending}
+            aria-label="Talk to Promi"
+            onClick={() => {
+              setTalkOpen(true);
+              void startRecording();
+            }}
+          >
+            <Mic />
+          </Button>
+          <Button
             type="submit"
             size="icon"
             disabled={pending || (!input.trim() && !image)}
@@ -439,6 +528,35 @@ export function AssistantChat({
           </Button>
         </form>
       </div>
+
+      <Dialog
+        open={talkOpen}
+        onOpenChange={(open) => {
+          if (!open && recording) stopRecording();
+          setTalkOpen(open);
+        }}
+      >
+        <DialogContent showCloseButton={!recording && !transcribing} className="surface-card max-w-md rounded-3xl p-6 sm:p-8">
+          <DialogHeader className="items-center text-center">
+            <div className={cn("grid size-20 place-items-center rounded-full bg-primary text-primary-foreground", recording && "animate-pulse")}>
+              {transcribing ? <Loader2 className="size-8 animate-spin" /> : <Mic className="size-8" />}
+            </div>
+            <DialogTitle>{transcribing ? "Turning speech into text…" : recording ? "Listening…" : "Talk to Promi"}</DialogTitle>
+            <DialogDescription>
+              {transcribing ? "Your message will send when ready." : recording ? "Tap stop when finished. Your words will send to Promi." : "Tap record to start."}
+            </DialogDescription>
+          </DialogHeader>
+          <Button
+            type="button"
+            size="lg"
+            className="w-full rounded-2xl"
+            disabled={transcribing}
+            onClick={() => (recording ? stopRecording() : void startRecording())}
+          >
+            {recording ? <><Square /> Stop and send</> : <><Mic /> Start talking</>}
+          </Button>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

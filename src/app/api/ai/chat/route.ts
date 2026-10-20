@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { buildAiContext, formatContextBlock } from "@/lib/ai/context";
-import { completeWithGemini } from "@/lib/ai/gemini";
 import { completeWithGroq, type ChatTurn } from "@/lib/ai/groq";
+import { completeWithGroqVision } from "@/lib/ai/groqVision";
 import { createClient } from "@/lib/supabase/server";
 
 const imageSchema = z.object({
@@ -15,6 +15,7 @@ const bodySchema = z
     conversationId: z.string().uuid().optional(),
     message: z.string().trim().max(2000).optional().default(""),
     relatedAssessmentId: z.string().uuid().optional(),
+    includeDailyPatterns: z.boolean().optional().default(false),
     image: imageSchema.optional(),
   })
   .superRefine((val, ctx) => {
@@ -51,7 +52,7 @@ export async function POST(req: Request) {
     );
   }
 
-  const { relatedAssessmentId, image } = parsed.data;
+  const { relatedAssessmentId, image, includeDailyPatterns } = parsed.data;
   const message =
     parsed.data.message?.trim() ||
     (image
@@ -127,12 +128,12 @@ export async function POST(req: Request) {
       content: m.content,
     }));
 
-  const ctx = await buildAiContext(supabase, user.id, relatedAssessmentId);
+  const ctx = await buildAiContext(supabase, user.id, relatedAssessmentId, includeDailyPatterns);
   const contextBlock = formatContextBlock(ctx);
 
-  // Images → Gemini vision. Text-only → Groq (fast).
+  // Use separate Groq accounts/models for vision and text.
   const result = image
-    ? await completeWithGemini({
+    ? await completeWithGroqVision({
         messages: turns,
         contextBlock,
         image: {

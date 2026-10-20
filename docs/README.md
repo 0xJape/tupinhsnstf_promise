@@ -19,6 +19,8 @@ Each file is a single decision area so the team can review, revise, and implemen
 | 10 | [10-success-metrics.md](./10-success-metrics.md) | Draft v1 — review | DoD, pilot metrics, milestones |
 | 11 | [11-website-components.md](./11-website-components.md) | Draft v1 — **UI catalog** | Components, props, screen map, build order |
 | 12 | [12-make-com-workflow.md](./12-make-com-workflow.md) | Implementation guide | Make.com webhook, events, cron, copy, smoke tests |
+| 13 | [13-promi-modal-triggers.md](./13-promi-modal-triggers.md) | Implementation guide | Promi modal priority, trigger matrix, and manual tests |
+| 14 | [14-admin-operations-guide.md](./14-admin-operations-guide.md) | Proposed implementation guide | Admin roles, dashboards, participant operations, referrals, corrections, security, and audit |
 
 ## Locked product snapshot
 

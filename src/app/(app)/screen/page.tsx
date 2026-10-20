@@ -2,6 +2,8 @@
 import { redirect } from "next/navigation";
 import { ArrowRight, ClipboardList } from "lucide-react";
 import { DisclaimerBanner } from "@/components/shared/DisclaimerBanner";
+import { BaselineCorrectionRequest } from "@/components/screening/BaselineCorrectionRequest";
+import { PhotoSymptomAssessment } from "@/components/screening/PhotoSymptomAssessment";
 import { RiskBadge } from "@/components/screening/RiskBadge";
 import { buttonVariants } from "@/components/ui/button";
 import { SCREEN_INTRO } from "@/lib/screening/content";
@@ -18,10 +20,13 @@ export default async function ScreenPage() {
 
   const { data: history } = await supabase
     .from("risk_assessments")
-    .select("id, category, total_score, created_at, referral_recommended")
+    .select("id, category, total_score, created_at, referral_recommended, assessment_type, record_status")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false })
     .limit(10);
+  const baseline = history?.find(
+    (row) => row.assessment_type === "baseline" && row.record_status === "valid",
+  );
 
   return (
     <>
@@ -31,39 +36,50 @@ export default async function ScreenPage() {
           PCOS risk screening
         </h1>
         <p className="max-w-prose text-sm leading-relaxed text-muted-foreground">
-          12 Yes/No items in 4 short groups. Pure rule engine scores risk.
+          22 items in 6 short groups. Most are Yes/No. Allow about 5–8 minutes.
         </p>
       </header>
 
       <DisclaimerBanner compact />
 
-      <section className="surface-card p-5" aria-label="Start screening">
+      <section className="surface-card p-5" aria-label="Baseline screening">
         <div className="flex size-11 items-center justify-center rounded-xl bg-secondary text-primary">
           <ClipboardList className="size-5" aria-hidden />
         </div>
         <p className="section-label mt-4 text-primary">pcos-screen-v2</p>
         <h2 className="mt-1 text-lg font-semibold tracking-tight">
-          Educational questionnaire
+          {baseline ? "Baseline completed" : "Educational questionnaire"}
         </h2>
         <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-          {SCREEN_INTRO}
+          {baseline
+            ? "Your first screening is your immutable baseline. Need to fix something? Send a review request instead of retaking it."
+            : SCREEN_INTRO}
         </p>
-        <ul className="mt-3 space-y-1 text-sm text-muted-foreground">
-          <li>· Groups A–D (3 questions each)</li>
-          <li>· BMI modifiers from your profile when set</li>
-          <li>· Referral guidance for Moderate / High</li>
-        </ul>
-        <Link
-          href="/screen/quiz"
-          className={cn(
-            buttonVariants({ size: "lg" }),
-            "mt-5 min-h-11 w-full rounded-xl",
-          )}
-        >
-          Start quiz
-          <ArrowRight className="size-4" aria-hidden />
-        </Link>
+        {baseline ? (
+          <div className="mt-5 grid gap-2">
+            <Link href={`/screen/result/${baseline.id}`} className={cn(buttonVariants({ size: "lg" }), "min-h-11 w-full rounded-xl")}>
+              View baseline
+              <ArrowRight className="size-4" aria-hidden />
+            </Link>
+            <BaselineCorrectionRequest assessmentId={baseline.id} />
+          </div>
+        ) : (
+          <>
+            <ul className="mt-3 space-y-1 text-sm text-muted-foreground">
+              <li>· Six focused groups with review before submission</li>
+              <li>· Progress stays on this device if you leave</li>
+              <li>· BMI modifiers from your profile when set</li>
+              <li>· Referral guidance for Moderate / High</li>
+            </ul>
+            <Link href="/screen/quiz" className={cn(buttonVariants({ size: "lg" }), "mt-5 min-h-11 w-full rounded-xl")}>
+              Start baseline
+              <ArrowRight className="size-4" aria-hidden />
+            </Link>
+          </>
+        )}
       </section>
+
+      {baseline && <PhotoSymptomAssessment baselineAssessmentId={baseline.id} />}
 
       <section className="space-y-3" aria-label="Past results">
         <h2 className="section-label">History</h2>

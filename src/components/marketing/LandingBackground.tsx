@@ -7,7 +7,7 @@ import gsap from "gsap";
  * Clay stage: soft candy blobs on lavender canvas.
  * Structure kept; futuristic grid removed.
  */
-export function LandingBackground() {
+export function LandingBackground({ animated = false }: { animated?: boolean }) {
   const rootRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -44,7 +44,7 @@ export function LandingBackground() {
     <div
       ref={rootRef}
       aria-hidden
-      className="pointer-events-none fixed inset-0 z-0 overflow-hidden bg-background"
+      className={`pointer-events-none fixed inset-0 z-0 overflow-hidden bg-background${animated ? " landing-brand-gradient" : ""}`}
     >
       <span className="lb-blob absolute -top-[10%] -left-[10%] h-[60vh] w-[60vh] rounded-full bg-[#9F2947]/10 blur-3xl" />
       <span className="lb-blob-slow absolute -right-[10%] top-[15%] h-[55vh] w-[55vh] rounded-full bg-[#EC4899]/10 blur-3xl" />
