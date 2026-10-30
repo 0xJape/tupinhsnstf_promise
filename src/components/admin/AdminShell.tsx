@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ClipboardList, HeartHandshake, LayoutDashboard, LogOut, UsersRound } from "lucide-react";
+import { ClipboardList, HeartHandshake, LayoutDashboard, LogOut, MessageSquareText, UsersRound } from "lucide-react";
 import { BrandLogo } from "@/components/shared/BrandLogo";
 import { ThemeToggle } from "@/components/shared/ThemeToggle";
 import { Badge } from "@/components/ui/badge";
@@ -16,6 +16,7 @@ const navigation = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/participants", label: "Participants", icon: UsersRound },
   { href: "/admin/referrals", label: "Referrals", icon: HeartHandshake },
+  { href: "/admin/feedback", label: "Feedback", icon: MessageSquareText },
 ];
 
 export function AdminShell({ children, role }: { children: React.ReactNode; role: AdminRole }) {

@@ -33,14 +33,25 @@ export function PromiseInitializer({ children }: { children: React.ReactNode }) 
 
   return (
     <main className="promise-initializer" aria-label="Loading P.R.O.M.I.S.E." role="status">
-      <div className="promise-orbit promise-orbit-one" />
-      <div className="promise-orbit promise-orbit-two" />
-      <div className="promise-loader-mark" aria-hidden="true">
-        <BrandLogo size={72} priority />
+      <div className="promise-loader-grid" aria-hidden="true" />
+      <div className="promise-care-core" aria-hidden="true">
+        <span className="promise-core-orbit promise-core-orbit-one"><i /></span>
+        <span className="promise-core-orbit promise-core-orbit-two"><i /></span>
+        <span className="promise-core-orbit promise-core-orbit-three"><i /></span>
+        <span className="promise-core-scan" />
+        <span className="promise-core-center">
+          <BrandLogo className="promise-core-logo" size={64} priority />
+        </span>
       </div>
-      <p className="promise-loader-kicker">P.R.O.M.I.S.E.</p>
-      <p className="promise-loader-copy">Preparing your health companion</p>
-      <span className="promise-loader-dots" aria-hidden="true"><i /><i /><i /></span>
+      <div className="promise-loader-readout">
+        <span className="promise-loader-index">01</span>
+        <div>
+          <p className="promise-loader-kicker">P.R.O.M.I.S.E.</p>
+          <p className="promise-loader-copy">Personal care space initializing</p>
+        </div>
+        <span className="promise-loader-live"><i /> SECURE</span>
+      </div>
+      <div className="promise-loader-progress" aria-hidden="true"><span /></div>
     </main>
   );
 }

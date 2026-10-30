@@ -55,7 +55,11 @@ function bmiPreview(height: string, weight: string) {
 
 export function SetupWizard({ firstName, openByDefault = true }: Props) {
   const [open, setOpen] = useState(openByDefault);
-  const [step, setStep] = useState(0);
+  const [step, setStep] = useState(() => {
+    if (typeof window === "undefined") return 0;
+    const saved = Number(window.sessionStorage.getItem("promise-onboarding-step"));
+    return Number.isInteger(saved) && saved >= 0 && saved < STEP_META.length ? saved : 0;
+  });
   const [draft, setDraft] = useState<OnboardingDraft>(emptyDraft);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -114,12 +118,20 @@ export function SetupWizard({ firstName, openByDefault = true }: Props) {
       return;
     }
     setError(null);
-    setStep((s) => Math.min(s + 1, STEP_META.length - 1));
+    setStep((s) => {
+      const nextStep = Math.min(s + 1, STEP_META.length - 1);
+      window.sessionStorage.setItem("promise-onboarding-step", String(nextStep));
+      return nextStep;
+    });
   }
 
   function back() {
     setError(null);
-    setStep((s) => Math.max(s - 1, 0));
+    setStep((s) => {
+      const nextStep = Math.max(s - 1, 0);
+      window.sessionStorage.setItem("promise-onboarding-step", String(nextStep));
+      return nextStep;
+    });
   }
 
   function submit() {
@@ -131,6 +143,7 @@ export function SetupWizard({ firstName, openByDefault = true }: Props) {
     startTransition(async () => {
       const res = await finishOnboarding(draft);
       if (res?.error) setError(res.error);
+      else window.sessionStorage.removeItem("promise-onboarding-step");
     });
   }
 

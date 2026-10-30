@@ -1,0 +1,81 @@
+flowchart TD
+    User([User]) --> Browser[Web / mobile browser]
+    Browser --> Frontend
+
+    subgraph Frontend[Frontend flows]
+        Auth{Logged in?}
+        Login[Register or login]
+        Consent[Consent and profile]
+        Home[Dashboard]
+        Choose{Choose feature}
+        Track[Track symptoms, cycle, wellness]
+        Screen[PCOS screening]
+        Care[Find care]
+        Help[Get help]
+        Assistant[AI assistant]
+        Notifications[Notification settings]
+        Safety{Need urgent support?}
+        Crisis[911 / NCMH 1553 / trusted contact]
+        Resources[Emotional support resources]
+        Directory[Verified care directory]
+        Map[Search, filters, MapLibre map]
+        Facility[Facility details and directions]
+        Journey[Health Journey]
+        Trends[Symptom trends and timeline]
+        Report[Doctor report]
+        Professional[Discuss with healthcare professional]
+
+        Auth -- No --> Login --> Consent
+        Auth -- Yes --> Consent
+        Consent --> Home --> Choose
+        Choose --> Track
+        Choose --> Screen
+        Choose --> Care
+        Choose --> Help
+        Choose --> Assistant
+        Choose --> Notifications
+        Help --> Safety
+        Safety -- Yes --> Crisis
+        Safety -- No --> Resources
+        Care --> Directory --> Map --> Facility
+        Track --> Journey --> Trends --> Report --> Professional
+    end
+
+    subgraph Backend[Backend flows]
+        AuthService[Supabase Auth]
+        HealthData[(Supabase PostgreSQL + RLS)]
+        Risk[Rule-based risk score]
+        Insights[Personalized insights]
+        AI[AI provider boundary]
+        ReminderJobs[Opt-in reminder jobs]
+        Events[Notification events]
+        Delivery[Email / SMS delivery]
+        Admin[Admin verification and moderation]
+        Privacy[Privacy, accessibility, security, medical-safety review]
+
+        AuthService --> HealthData
+        Risk --> HealthData --> Insights
+        AI --> Insights
+        ReminderJobs --> Events --> Delivery
+        Admin --> HealthData
+        Privacy -. governs .-> HealthData
+        Privacy -. governs .-> AI
+    end
+
+    Consent -.-> AuthService
+    Track -. saves .-> HealthData
+    Screen -. evaluates .-> Risk
+    Assistant -. requests .-> AI
+    Notifications -. configures .-> ReminderJobs
+    Crisis -. uses .-> Resources
+    Directory -. reads .-> HealthData
+    Admin -. updates .-> Directory
+
+    classDef current fill:#dcfce7,stroke:#15803d,color:#14532d;
+    classDef safety fill:#ffe4e6,stroke:#e11d48,color:#881337;
+    classDef system fill:#dbeafe,stroke:#2563eb,color:#1e3a8a;
+    classDef planned fill:#fef3c7,stroke:#d97706,color:#78350f;
+    class Auth,Login,Consent,Home,Choose,Track,Screen,Care,Help,Assistant,Notifications current;
+    class Safety,Crisis,Resources safety;
+    class Frontend,Backend,AuthService,HealthData,Risk,Insights,AI,Privacy system;
+    class Journey,Trends,Report,Professional,ReminderJobs,Events,Delivery,Admin planned;

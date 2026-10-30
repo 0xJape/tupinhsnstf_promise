@@ -73,7 +73,7 @@ export default async function CyclePage({ searchParams }: Props) {
   const nextLabel = logPeriod ? "Log a period start" : todayCheckIn ? "View today’s check-in" : "Check in today";
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5" data-tour-section="cycle-page">
       <header className="flex items-start justify-between gap-3">
         <div className="space-y-1">
           <h1 className="text-2xl font-semibold tracking-tight">Cycle</h1>

@@ -75,6 +75,10 @@ async function saveProfile(formData: FormData) {
     .update({
       full_name: fullName,
       mobile_number: String(formData.get("mobile_number") ?? "").trim() || null,
+      emergency_contact_name:
+        String(formData.get("emergency_contact_name") ?? "").trim() || null,
+      emergency_contact_phone:
+        String(formData.get("emergency_contact_phone") ?? "").trim() || null,
       height_cm: numOrNull(formData.get("height_cm")),
       weight_kg: numOrNull(formData.get("weight_kg")),
       waist_cm: numOrNull(formData.get("waist_cm")),
@@ -138,7 +142,7 @@ export default async function ProfilePage({ searchParams }: Props) {
   const { data: profile } = await supabase
     .from("profiles")
     .select(
-      "full_name, email, date_of_birth, mobile_number, height_cm, weight_kg, waist_cm, bmi, activity_level, exercise_frequency, sleep_band, stress_level, smoking, alcohol_band, onboarding_complete",
+      "full_name, email, date_of_birth, mobile_number, emergency_contact_name, emergency_contact_phone, height_cm, weight_kg, waist_cm, bmi, activity_level, exercise_frequency, sleep_band, stress_level, smoking, alcohol_band, onboarding_complete",
     )
     .eq("id", user.id)
     .maybeSingle();
@@ -163,7 +167,7 @@ export default async function ProfilePage({ searchParams }: Props) {
   const initial = (profile.full_name?.trim()?.[0] ?? "?").toUpperCase();
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5" data-tour-section="profile-page">
       <header className="space-y-1">
         <h1 className="text-2xl font-semibold tracking-tight">You</h1>
         <p className="text-sm text-muted-foreground">
@@ -260,6 +264,20 @@ export default async function ProfilePage({ searchParams }: Props) {
                 className="min-h-11 rounded-xl"
               />
             </Field>
+            <div className="rounded-2xl border border-rose-300/40 bg-rose-50/60 p-4 dark:bg-rose-950/15">
+              <p className="text-sm font-semibold">Emergency contact</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Optional trusted person for moments when you need help. PROMISE does not call them automatically.
+              </p>
+              <div className="mt-3 space-y-3">
+                <Field label="Name" htmlFor="emergency_contact_name">
+                  <Input id="emergency_contact_name" name="emergency_contact_name" defaultValue={profile.emergency_contact_name ?? ""} className="min-h-11 rounded-xl bg-background" />
+                </Field>
+                <Field label="Phone" htmlFor="emergency_contact_phone">
+                  <Input id="emergency_contact_phone" name="emergency_contact_phone" type="tel" defaultValue={profile.emergency_contact_phone ?? ""} className="min-h-11 rounded-xl bg-background" />
+                </Field>
+              </div>
+            </div>
             <div className="grid grid-cols-2 gap-3">
               <Field label="Height (cm)" htmlFor="height_cm">
                 <Input

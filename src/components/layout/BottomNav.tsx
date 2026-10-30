@@ -36,6 +36,7 @@ export function BottomNav() {
             <Link
               key={href}
               href={href}
+                data-tour-tab={href}
               className={cn(
                 "flex min-h-12 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-[20px] px-1 text-[10px] font-bold active:scale-[0.97]",
                 active

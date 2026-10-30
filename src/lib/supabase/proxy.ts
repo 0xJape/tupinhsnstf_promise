@@ -8,6 +8,13 @@ import { NextResponse, type NextRequest } from "next/server";
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
+  const publicPath =
+    request.nextUrl.pathname === "/" ||
+    request.nextUrl.pathname.startsWith("/login") ||
+    request.nextUrl.pathname.startsWith("/register") ||
+    request.nextUrl.pathname.startsWith("/consent") ||
+    request.nextUrl.pathname.startsWith("/api/");
+
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anon =
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ??
@@ -36,13 +43,6 @@ export async function updateSession(request: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-
-  const publicPath =
-    request.nextUrl.pathname === "/" ||
-    request.nextUrl.pathname.startsWith("/login") ||
-    request.nextUrl.pathname.startsWith("/register") ||
-    request.nextUrl.pathname.startsWith("/consent") ||
-    request.nextUrl.pathname.startsWith("/api/");
 
   if (!user && !publicPath) {
     return NextResponse.redirect(new URL("/login", request.url));

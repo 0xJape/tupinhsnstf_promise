@@ -1,5 +1,5 @@
 import { AssistantChat } from "@/components/assistant/AssistantChat";
 
 export default function AssistantPage() {
-  return <AssistantChat />;
+  return <div data-tour-section="assistant-page"><AssistantChat /></div>;
 }

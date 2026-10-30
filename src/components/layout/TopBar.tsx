@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Bell } from "lucide-react";
+import { Bell, LifeBuoy } from "lucide-react";
 import { BrandLogo } from "@/components/shared/BrandLogo";
 import { ThemeToggle } from "@/components/shared/ThemeToggle";
 import { cn } from "@/lib/utils";
@@ -31,6 +31,13 @@ export function TopBar({ className, notification }: Props) {
         </Link>
         <div className="flex shrink-0 items-center gap-0.5">
           <ThemeToggle className="text-foreground hover:bg-primary/8" />
+          <Link
+            href="/help"
+            className="flex size-10 shrink-0 items-center justify-center rounded-[16px] text-muted-foreground hover:bg-primary/8 hover:text-primary active:scale-95"
+            aria-label="Help and safety"
+          >
+            <LifeBuoy className="size-5" strokeWidth={1.75} aria-hidden />
+          </Link>
           <Link
             href="/profile/notifications"
             className="relative flex size-10 shrink-0 items-center justify-center rounded-[16px] text-muted-foreground hover:bg-primary/8 hover:text-primary active:scale-95"

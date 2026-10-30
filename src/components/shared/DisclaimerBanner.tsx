@@ -11,12 +11,12 @@ export function DisclaimerBanner({ className, compact }: Props) {
     <div
       role="note"
       className={cn(
-        "flex gap-3 rounded-[24px] border border-amber-500/20 bg-[rgba(255,251,235,0.75)] px-4 py-3.5 text-sm font-medium text-amber-950 shadow-[10px_10px_22px_rgba(160,150,180,0.12)] backdrop-blur-xl dark:border-amber-400/15 dark:bg-amber-500/8 dark:text-amber-50/95 dark:shadow-[0_8px_24px_rgba(0,0,0,0.3)]",
+        "relative flex items-start gap-3 overflow-hidden rounded-2xl border border-[#e9c9a7] bg-[#fffaf3] px-4 py-3 text-sm font-medium text-[#5a3828] shadow-[0_8px_24px_rgba(113,67,38,0.08)] dark:border-amber-300/20 dark:bg-[#291b19] dark:text-amber-50/90 dark:shadow-[0_8px_24px_rgba(0,0,0,0.22)]",
         className,
       )}
     >
       <ShieldAlert
-        className="mt-0.5 size-5 shrink-0 text-amber-700 dark:text-amber-300"
+        className="mt-0.5 size-4 shrink-0 rounded-full bg-[#f3d7b9] p-0.5 text-[#8d4e2b] dark:bg-amber-300/15 dark:text-amber-200"
         aria-hidden
       />
       {compact ? (

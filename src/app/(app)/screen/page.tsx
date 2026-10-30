@@ -30,7 +30,7 @@ export default async function ScreenPage() {
 
   return (
     <>
-      <header className="space-y-1.5 border-b border-border pb-5">
+      <header className="space-y-1.5 border-b border-border pb-5" data-tour-section="screen-page">
         <p className="section-label text-primary">Screen</p>
         <h1 className="text-2xl font-semibold tracking-tight">
           PCOS risk screening

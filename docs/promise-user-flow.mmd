@@ -1,0 +1,59 @@
+flowchart LR
+    App[ PROMISE web app ]
+    User([User])
+
+    Auth[Authentication]
+    Profile[Health profile]
+    Logs[Period, symptom, and lifestyle data]
+    Skin[Skin photo upload]
+    Vision[Vision AI]
+    Observations[Dermatology observations]
+    Answers[PCOS screening answers]
+    Rules[Rule-based risk engine]
+    Risk{Elevated risk?}
+    Score[Risk score and confidence]
+
+    DB[(Supabase database)]
+    Context[Combined health context]
+    Assistant[AI health assistant]
+    Insights[Personalized insights]
+    Referral[Doctor referral recommendation]
+    Report[Doctor report generator]
+    Download[Downloadable doctor report]
+    Automation[Make.com automation]
+    Notice[Email, SMS, or push notifications]
+
+    App --> Auth --> DB
+    App --> Profile --> DB
+    App --> Logs --> DB
+    App --> Skin --> Vision --> Observations --> DB
+    App --> Answers --> Rules --> Risk
+    Risk -- Yes --> Referral
+    Risk --> Score --> DB
+
+    DB --> Context --> Assistant
+    DB --> Insights
+    DB --> Report --> Download --> User
+    DB --> Automation --> Notice --> User
+    DB --> Context
+    App --> User
+    Referral --> User
+    Assistant --> Insights --> User
+
+    classDef app fill:#f3f4f6,stroke:#374151,color:#111827;
+    classDef data fill:#eef2ff,stroke:#4f46e5,color:#1e1b4b;
+    classDef ai fill:#ecfeff,stroke:#0891b2,color:#164e63;
+    classDef safety fill:#fff1f2,stroke:#e11d48,color:#881337;
+    class App,User app;
+    class Auth,Profile,Logs,Skin,Answers,DB,Context,Report,Download,Automation,Notice data;
+    class Vision,Observations,Assistant,Insights ai;
+    class Rules,Risk,Score,Referral safety;
+
+    classDef input fill:#dcfce7,stroke:#15803d,color:#14532d;
+    classDef data fill:#dbeafe,stroke:#2563eb,color:#1e3a8a;
+    classDef safety fill:#ffe4e6,stroke:#e11d48,color:#881337;
+    classDef planned fill:#fef3c7,stroke:#d97706,color:#78350f;
+    class User,App,Input,Validate input;
+    class Store,Tracking,Cycle,Screening,Contact,Insights,Rules,Risk,Journey,Report,Directory,Map,Audit data;
+    class HelpRequest,Safety safety;
+    class AssistantRequest,AI,Guidance,Preferences,Reminder,Notification,Admin planned;

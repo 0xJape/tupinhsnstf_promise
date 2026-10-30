@@ -2,8 +2,9 @@ import { BottomNav } from "@/components/layout/BottomNav";
 import { TopBar } from "@/components/layout/TopBar";
 import { LandingBackground } from "@/components/marketing/LandingBackground";
 import Link from "next/link";
-import { CalendarDays, ClipboardList, Home, MessageCircle, User } from "lucide-react";
+import { CalendarDays, ClipboardList, Home, LifeBuoy, MessageCircle, User } from "lucide-react";
 import { BrandLogo } from "@/components/shared/BrandLogo";
+import { NavigationTutorial } from "@/components/layout/NavigationTutorial";
 
 type Props = {
   children: React.ReactNode;
@@ -25,7 +26,7 @@ export function AppShell({ children, notification, hideNav, hideTop }: Props) {
             <span className="font-display text-sm font-extrabold tracking-[.12em]">P.R.O.M.I.S.E.</span>
           </Link>
           <nav className="space-y-2 p-4" aria-label="Main navigation">
-            {[["/home", "Dashboard", Home], ["/cycle", "Cycle", CalendarDays], ["/screen", "Screening", ClipboardList], ["/assistant", "Assistant", MessageCircle], ["/profile", "Profile", User]].map(([href, label, Icon]) => <Link key={href as string} href={href as string} className="app-sidebar-link flex min-h-11 items-center gap-3 rounded-2xl px-3 text-sm font-semibold text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"><Icon className="size-4" aria-hidden />{label as string}</Link>)}
+            {[["/home", "Dashboard", Home], ["/cycle", "Cycle", CalendarDays], ["/screen", "Screening", ClipboardList], ["/assistant", "Assistant", MessageCircle], ["/profile", "Profile", User], ["/help", "Help", LifeBuoy]].map(([href, label, Icon]) => <Link key={href as string} href={href as string} data-tour-tab={href as string} className="app-sidebar-link flex min-h-11 items-center gap-3 rounded-2xl px-3 text-sm font-semibold text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"><Icon className="size-4" aria-hidden />{label as string}</Link>)}
           </nav>
         </aside> : null}
         <div className="min-w-0 lg:pl-[17rem]">
@@ -37,6 +38,7 @@ export function AppShell({ children, notification, hideNav, hideTop }: Props) {
               : "page-enter mx-auto w-full max-w-7xl flex-1 space-y-6 px-5 pb-28 pt-6 sm:px-8 lg:px-8"
           }
         >
+          {!hideTop ? <div className="app-navigation-tour-trigger"><NavigationTutorial /></div> : null}
           {children}
         </main>
         {!hideNav ? <BottomNav /> : null}

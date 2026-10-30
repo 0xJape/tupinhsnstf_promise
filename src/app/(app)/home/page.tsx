@@ -5,18 +5,19 @@ import {
   CalendarDays,
   ClipboardList,
   HeartPulse,
-  MessageCircle,
   Sparkles,
   Stethoscope,
-  UserRound,
+  Phone,
 } from "lucide-react";
 import { RiskBadge } from "@/components/screening/RiskBadge";
 import { DisclaimerBanner } from "@/components/shared/DisclaimerBanner";
-import { ThemeToggle } from "@/components/shared/ThemeToggle";
 import { PhaseGuidanceCard } from "@/components/cycle/PhaseGuidanceCard";
-import { Promi } from "@/components/promi/Promi";
 import { DailyBrief } from "@/components/home/DailyBrief";
-import { buttonVariants } from "@/components/ui/button";
+import { CycleOrbit } from "@/components/home/CycleOrbit";
+import { PromiBay } from "@/components/home/PromiBay";
+import { WellnessWeb } from "@/components/home/WellnessWeb";
+import { ResourceDirectory } from "@/components/help/ResourceDirectory";
+import { AnatomyViewer } from "@/components/education/AnatomyViewer";
 import {
   computeCycleInsights,
   type PeriodLog,
@@ -240,7 +241,7 @@ export default async function HomePage({ searchParams }: Props) {
   let fullName: string | null = null;
   const { data: profile } = await supabase
     .from("profiles")
-    .select("onboarding_complete, full_name")
+    .select("onboarding_complete, full_name, emergency_contact_phone")
     .eq("id", user.id)
     .maybeSingle();
   if (profile && !profile.onboarding_complete) redirect("/onboarding");
@@ -248,7 +249,7 @@ export default async function HomePage({ searchParams }: Props) {
 
   const name = firstName(fullName);
 
-  const [{ data: screenRows }, { data: periodRows }] = await Promise.all([
+  const [{ data: screenRows }, { data: periodRows }, { data: safetyCheckin }] = await Promise.all([
     user
       ? supabase
           .from("risk_assessments")
@@ -265,6 +266,15 @@ export default async function HomePage({ searchParams }: Props) {
           .order("start_date", { ascending: false })
           .limit(12)
       : Promise.resolve({ data: null }),
+        user
+          ? supabase
+            .from("safety_checkins")
+            .select("status, checkin_date")
+            .eq("user_id", user.id)
+            .order("checkin_date", { ascending: false })
+            .limit(1)
+            .maybeSingle()
+          : Promise.resolve({ data: null }),
   ]);
 
   const latestScreen = screenRows?.[0] ?? null;
@@ -362,30 +372,21 @@ export default async function HomePage({ searchParams }: Props) {
   ] as const;
 
   return (
-    <div className="dashboard-home mx-auto w-full max-w-7xl space-y-6">
-      <header className="dashboard-header flex items-start justify-between gap-3">
-          <div className="space-y-1">
-            <p className="section-label text-primary">
-              {greet}
-              {name ? `, ${name}` : ""}
-            </p>
-            <h1 className="font-display text-2xl font-extrabold tracking-tight text-foreground sm:text-[1.75rem]">
-              Your care home
-            </h1>
-            <p className="max-w-prose text-sm font-medium leading-relaxed text-muted-foreground">
-              Education only — not a diagnosis.
-            </p>
-          </div>
-          <ThemeToggle className="glass-chip" />
-      </header>
-
+    <div className="dashboard-home mx-auto w-full max-w-7xl">
       <div className="dashboard-main-grid">
-        <section className="dashboard-today" aria-label="Today">
+        <section className="dashboard-today" data-tour-section="dashboard-hero" aria-label="Today">
           <DailyBrief greeting={greet} name={name} cycleLine={cycleLine} action={recommended} actionKind={referral ? "care" : !latestScreen ? "screen" : "cycle"} />
           <DisclaimerBanner compact />
+          <section className={cn("mt-4 rounded-3xl border p-4", safetyCheckin?.status === "need_support" ? "border-rose-300/60 bg-rose-50/80 dark:bg-rose-950/25" : "border-emerald-300/50 bg-emerald-50/70 dark:bg-emerald-950/20")} aria-label="Safety status">
+            <div className="flex items-start justify-between gap-3">
+              <div><p className="section-label">Safety signal</p><h2 className="mt-1 text-base font-bold">{safetyCheckin?.status === "need_support" ? "Support requested" : safetyCheckin ? "Safe for now" : "No check-in yet"}</h2><p className="mt-1 text-xs text-muted-foreground">{safetyCheckin ? `Last check-in: ${formatShort(safetyCheckin.checkin_date)}` : "A private daily check-in helps you notice what support you need."}</p></div>
+              <HeartPulse className={cn("size-5", safetyCheckin?.status === "need_support" ? "text-rose-600" : "text-emerald-600")} aria-hidden />
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2"><Link href="/track" className="inline-flex min-h-9 items-center gap-1 rounded-xl bg-primary px-3 text-xs font-bold text-primary-foreground">Open check-in <ArrowRight className="size-3" /></Link>{safetyCheckin?.status === "need_support" ? <Link href="/help" className="inline-flex min-h-9 items-center gap-1 rounded-xl border border-rose-300 px-3 text-xs font-bold text-rose-800 dark:text-rose-100">Open support</Link> : null}</div>
+          </section>
         </section>
 
-        <section className="dashboard-risk" aria-label="Risk snapshot">
+        <section className="dashboard-risk" data-tour-section="dashboard-snapshot" aria-label="Risk snapshot">
           <Link
             href={
               latestScreen ? `/screen/result/${latestScreen.id}` : "/screen"
@@ -455,7 +456,33 @@ export default async function HomePage({ searchParams }: Props) {
           </div>
         </section>
 
-        <section className="dashboard-actions space-y-3" aria-label="Quick access">
+        <section className="dashboard-visuals" data-tour-section="dashboard-visuals" aria-label="Visual health overview">
+          <Link href="/cycle" className="dashboard-vital-card dashboard-vital-cycle">
+            <div className="mb-3 flex items-center justify-between">
+              <div>
+                <p className="section-label text-primary">Cycle map</p>
+                <h2 className="mt-1 text-lg font-semibold tracking-tight text-foreground">Your cycle today</h2>
+              </div>
+              <CalendarDays className="size-5 text-primary/70" aria-hidden />
+            </div>
+            <CycleOrbit insights={insights} />
+            <span className="dashboard-card-link">Open cycle <ArrowRight className="size-3.5" aria-hidden /></span>
+          </Link>
+          <Link href="/track" className="dashboard-vital-card dashboard-vital-wellness">
+            <div className="mb-3 flex items-center justify-between">
+              <div>
+                <p className="section-label text-primary">Wellness web</p>
+                <h2 className="mt-1 text-lg font-semibold tracking-tight text-foreground">How you are feeling</h2>
+              </div>
+              <HeartPulse className="size-5 text-primary/70" aria-hidden />
+            </div>
+            <WellnessWeb />
+            <span className="dashboard-card-link">Log how you feel <ArrowRight className="size-3.5" aria-hidden /></span>
+          </Link>
+          <PromiBay />
+        </section>
+
+        <section className="dashboard-actions space-y-3" data-tour-section="dashboard-actions" aria-label="Quick access">
           <h2 className="section-label">Quick access</h2>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
             {quick.map(({ href, label, icon: Icon, tone }) => (
@@ -480,15 +507,16 @@ export default async function HomePage({ searchParams }: Props) {
           </div>
         </section>
 
-        <section className="dashboard-education" aria-labelledby="dashboard-education-title">
-          <div className="mb-3 flex items-end justify-between gap-3">
+        <section className="dashboard-education" data-tour-section="dashboard-education" aria-labelledby="dashboard-education-title">
+          <div className="dashboard-education-head">
             <div>
-              <p className="section-label text-primary">Learn something useful</p>
-              <h2 id="dashboard-education-title" className="mt-1 text-lg font-semibold tracking-tight text-foreground">PCOS education</h2>
+              <p className="dashboard-hud-eyebrow">Knowledge module // 03</p>
+              <h2 id="dashboard-education-title">Learn something useful</h2>
             </div>
-            <Link href="/help" className="text-xs font-semibold text-primary">View help <ArrowRight className="ml-1 inline size-3" aria-hidden /></Link>
+            <Link href="/help" className="dashboard-education-help">View help <ArrowRight className="size-3" aria-hidden /></Link>
           </div>
-          <article className="dashboard-video overflow-hidden rounded-xl border border-border bg-card">
+          <AnatomyViewer />
+          <article className="dashboard-education-feature">
             <div className="aspect-[9/16] max-h-[28rem] w-full bg-black sm:aspect-video">
               <iframe
                 className="size-full"
@@ -499,139 +527,59 @@ export default async function HomePage({ searchParams }: Props) {
                 allowFullScreen
               />
             </div>
-            <div className="p-4">
-              <h3 className="font-semibold text-foreground">Understanding PCOS</h3>
-              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">Short educational video. It does not diagnose PCOS or replace professional medical advice.</p>
+            <div className="dashboard-education-caption">
+              <span>Featured lesson</span>
+              <h3>Understanding PCOS</h3>
+              <p>Educational only. Not a diagnosis or replacement for professional care.</p>
             </div>
           </article>
-          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <div className="dashboard-education-links">
             {[
               ["Understanding your cycle", "gmIzqE1mxsU"],
               ["Questions for your clinician", "gbNyX76pXxA"],
             ].map(([title, videoId]) => (
-              <a key={videoId} href={`https://www.youtube.com/watch?v=${videoId}`} target="_blank" rel="noreferrer" className="overflow-hidden rounded-xl border border-border bg-card transition-opacity hover:opacity-85">
-                <div className="aspect-video bg-black">
+              <a key={videoId} href={`https://www.youtube.com/watch?v=${videoId}`} target="_blank" rel="noreferrer" className="dashboard-education-link">
+                <div className="dashboard-education-play" aria-hidden><span>▶</span></div>
+                <div>
+                  <span>Next lesson</span>
+                  <p>{title}</p>
+                </div>
+                <ArrowRight className="ml-auto size-4" aria-hidden />
+                {/* Keep previews out of initial page load; link opens full lesson. */}
+                <div className="hidden aspect-video bg-black">
                   <iframe className="pointer-events-none size-full" src={`https://www.youtube-nocookie.com/embed/${videoId}`} title={title} loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen />
                 </div>
-                <p className="p-3 text-sm font-semibold text-foreground">{title}</p>
               </a>
             ))}
           </div>
         </section>
 
-        <section className="dashboard-recommendation glass-strong rounded-[28px] p-5" aria-label="Recommended action">
-          <div className="flex items-start gap-3">
-            <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-primary/12 text-primary">
-              {referral ? (
-                <Stethoscope className="size-5" aria-hidden />
-              ) : !latestScreen ? (
-                <ClipboardList className="size-5" aria-hidden />
-              ) : (
-                <CalendarDays className="size-5" aria-hidden />
-              )}
-            </span>
-            <div className="min-w-0 space-y-1">
-              <p className="section-label text-primary">{recommended.label}</p>
-              <h2 className="text-lg font-semibold tracking-tight text-foreground sm:text-xl">
-                {recommended.title}
-              </h2>
-              <p className="max-w-prose text-sm leading-relaxed text-muted-foreground">
-                {recommended.body}
-              </p>
-            </div>
-          </div>
-          <div className="mt-4 flex flex-wrap gap-2">
-            <Link
-              href={recommended.href}
-              className={cn(
-                buttonVariants({ size: "lg" }),
-                "min-h-11 rounded-xl",
-              )}
-            >
-              {recommended.cta}
-              <ArrowRight className="size-4" aria-hidden />
-            </Link>
-            {referral ? (
-              <Link
-                href="/help"
-                className={cn(
-                  buttonVariants({ variant: "outline", size: "lg" }),
-                  "min-h-11 rounded-xl",
-                )}
-              >
-                When to seek care
-              </Link>
-            ) : null}
-          </div>
-        </section>
-
-        <section className="dashboard-cycle grid grid-cols-2 gap-2.5" aria-label="Cycle and chat">
-          <Link
-            href="/cycle"
-            className="glass group flex flex-col gap-2 rounded-[28px] p-3.5 transition active:scale-[0.99]"
-          >
-            <span className="flex items-center gap-1.5 text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
-              <CalendarDays className="size-3.5 text-primary" aria-hidden />
-              Cycle
-            </span>
-            {insights.cycleDay != null ? (
-              <>
-                <p className="text-sm font-semibold tracking-tight text-foreground">
-                  Day {insights.cycleDay}
-                  {insights.phase !== "unknown" ? (
-                    <span className="font-normal text-muted-foreground">
-                      {" "}
-                      · {insights.phaseLabel.replace(" phase", "")}
-                    </span>
-                  ) : null}
-                </p>
-                <p className="text-xs leading-snug text-muted-foreground">
-                  {cycleLine}
-                </p>
-              </>
-            ) : (
-              <>
-                <p className="text-sm font-semibold tracking-tight text-foreground">
-                  {logs.length ? "Building estimate" : "No logs yet"}
-                </p>
-                <p className="text-xs leading-snug text-muted-foreground">
-                  {cycleLine}
-                </p>
-              </>
-            )}
-          </Link>
-
-          <Link
-            href="/assistant"
-            className="glass group flex flex-col gap-2 rounded-[28px] p-3.5 transition active:scale-[0.99]"
-          >
-            <span className="flex items-center gap-1.5 text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
-              <MessageCircle className="size-3.5 text-primary" aria-hidden />
-              Chat
-            </span>
-            <p className="text-sm font-semibold tracking-tight text-foreground">
-              Ask Promi
-            </p>
-            <p className="text-xs leading-snug text-muted-foreground">
-              Educational answers only
-            </p>
-            <span className="mt-auto inline-flex items-center gap-1 text-xs font-medium text-primary">
-              Open
-              <UserRound className="size-3" aria-hidden />
-            </span>
-          </Link>
-        </section>
+        <div className="col-span-full">
+        </div>
 
         <section className="dashboard-phase" aria-label="Phase guidance">
           <PhaseGuidanceCard insights={insights} />
         </section>
 
-        <section className="dashboard-promi glass-strong rounded-[28px] p-4" aria-label="Promi guide">
-          <Promi
-            emotion="wave"
-            size="sm"
-            line="I can help explain your results and next steps."
-          />
+        <section className="col-span-full mt-2 border-t border-border/70 pt-6" aria-labelledby="dashboard-support-title">
+          <div className="rounded-3xl border border-rose-300/40 bg-rose-50/70 p-5 dark:bg-rose-950/20">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="section-label text-rose-700 dark:text-rose-300">Immediate support // Phase 1</p>
+              <h2 id="dashboard-support-title" className="mt-1 text-xl font-semibold text-foreground">Need help right now?</h2>
+              <p className="mt-1 max-w-xl text-sm text-muted-foreground">If you may be in immediate danger, call emergency services. For emotional crisis support, call NCMH.</p>
+            </div>
+            <div className="flex shrink-0 gap-2">
+              <a href="tel:911" className="inline-flex h-11 items-center gap-2 rounded-xl bg-rose-600 px-4 text-sm font-bold text-white shadow-sm hover:bg-rose-700"><Phone className="size-4" aria-hidden /> 911</a>
+              <a href="tel:1553" className="inline-flex h-11 items-center gap-2 rounded-xl border border-rose-300/60 bg-background px-4 text-sm font-bold text-foreground hover:bg-rose-100 dark:hover:bg-rose-950/40"><Phone className="size-4" aria-hidden /> 1553</a>
+            </div>
+          </div>
+          </div>
+        </section>
+
+        <section className="dashboard-care col-span-full mt-2 w-full border-t border-border/70 pt-6" aria-labelledby="dashboard-care-title">
+          <p id="dashboard-care-title" className="mb-3 section-label text-primary">Care finder // Phase 1</p>
+          <ResourceDirectory />
         </section>
       </div>
     </div>

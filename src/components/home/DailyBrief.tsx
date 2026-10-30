@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ArrowRight, CalendarDays, Check, ClipboardList, HeartPulse, Sparkles, Stethoscope } from "lucide-react";
-import { Promi } from "@/components/promi/Promi";
+import { BrandLogo } from "@/components/shared/BrandLogo";
 
 type CheckIn = {
   label: string;
@@ -29,23 +29,40 @@ export function DailyBrief({ greeting, name, cycleLine, action, actionKind }: Pr
   const ActionIcon = actionKind === "care" ? Stethoscope : actionKind === "screen" ? ClipboardList : CalendarDays;
   const steps = actionKind === "care" ? ["Screen saved", "Prepare questions", "Talk with a clinician"] : actionKind === "screen" ? ["Read how it works", "Answer at your pace", "Save your context"] : ["Add a start date", "Build your history", "See estimates"];
   return (
-    <section className="dashboard-brief" aria-label="Today’s brief">
-      <div className="dashboard-brief-copy">
-        <p className="section-label text-primary">{greeting}{name ? `, ${name}` : ""}</p>
-        <h1 className="font-display text-3xl font-black tracking-tight text-foreground">Your next small step.</h1>
-        <p className="mt-2 text-sm font-medium leading-relaxed text-muted-foreground">{cycleLine}. Education and estimates only — not a diagnosis.</p>
-        <Link href={action.href} className="mt-5 inline-flex min-h-12 items-center gap-2 rounded-2xl bg-primary px-4 text-sm font-extrabold text-primary-foreground shadow-lg shadow-primary/20 transition hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary">
+    <section className="dashboard-hud" aria-label="Today’s brief">
+      <span className="dashboard-hud-grid" aria-hidden />
+      <span className="dashboard-hud-corner dashboard-hud-corner-one" aria-hidden />
+      <span className="dashboard-hud-corner dashboard-hud-corner-two" aria-hidden />
+
+      <div className="dashboard-hud-copy">
+        <p className="dashboard-hud-eyebrow">{greeting}{name ? `, ${name}` : ""}</p>
+        <h1>Your next small step.</h1>
+        <p className="dashboard-hud-cycle">{cycleLine}</p>
+        <Link href={action.href} className="dashboard-hud-primary">
           {action.cta}<ArrowRight className="size-4" aria-hidden />
         </Link>
       </div>
-      <div className="dashboard-brief-action">
-        <div className="flex items-start justify-between gap-3"><div><p className="section-label text-primary">{action.label}</p><p className="mt-1 font-display text-lg font-extrabold tracking-tight text-foreground">{action.title}</p></div><span className="dashboard-action-icon"><ActionIcon className="size-5" aria-hidden /></span></div>
-        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{action.body}</p>
-        <ol className="dashboard-action-route" aria-label="Recommended action steps">{steps.map((step, index) => <li key={step} className={index === 0 ? "is-complete" : ""}><span>{index === 0 ? <Check className="size-3" aria-hidden /> : index + 1}</span>{step}</li>)}</ol>
-        <div className="mt-3 flex items-center justify-between gap-3"><Promi emotion={actionKind === "care" ? "care" : "wave"} size="sm" variant="bare" className="dashboard-action-promi" hideName /><Link href={action.href} className="dashboard-action-link">{action.cta}<ArrowRight className="size-3.5" aria-hidden /></Link></div>
+
+      <div className="dashboard-hud-reactor" aria-hidden="true">
+        <span className="dashboard-hud-radar" />
+        <span className="dashboard-hud-ring dashboard-hud-ring-one"><i /></span>
+        <span className="dashboard-hud-ring dashboard-hud-ring-two"><i /></span>
+        <span className="dashboard-hud-ring dashboard-hud-ring-three" />
+        <span className="dashboard-hud-crosshair" />
+        <span className="dashboard-hud-core"><BrandLogo className="dashboard-hud-logo" size={64} priority /></span>
       </div>
+
+      <div className="dashboard-hud-mission">
+        <div className="dashboard-hud-mission-head">
+          <div><p>{action.label}</p><h2>{action.title}</h2></div>
+          <span><ActionIcon className="size-5" aria-hidden /></span>
+        </div>
+        <ol aria-label="Recommended action steps">{steps.map((step, index) => <li key={step} className={index === 0 ? "is-complete" : ""}><span>{index === 0 ? <Check className="size-3" aria-hidden /> : index + 1}</span><b>{step}</b></li>)}</ol>
+        <Link href={action.href} className="dashboard-hud-secondary">{action.cta}<ArrowRight className="size-3.5" aria-hidden /></Link>
+      </div>
+
       <div className="dashboard-checkins" aria-label="What changed today?">
-        <p className="section-label col-span-full">What changed?</p>
+        <p className="col-span-full">What changed?</p>
         {checkIns.map(({ label, href, icon: Icon }) => <Link key={label} href={href} className="dashboard-checkin"><Icon className="size-4 text-primary" aria-hidden />{label}</Link>)}
       </div>
     </section>
