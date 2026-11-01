@@ -7,18 +7,11 @@ import { useState } from "react";
 import { BrandLogo } from "@/components/shared/BrandLogo";
 import { DisclaimerBanner } from "@/components/shared/DisclaimerBanner";
 import { PatientStories } from "@/components/home/PatientStories";
-import { AnatomyViewer } from "@/components/education/AnatomyViewer";
 
 const features = [
   [CalendarDays, "Track your cycle", "Notice patterns in your period and symptoms over time.", "/cycle"],
   [ClipboardList, "Understand screening", "See clear, rule-based health education—not a diagnosis.", "/screen"],
   [MessageCircle, "Ask Promi", "Get calm explanations and practical next steps in plain language.", "/assistant"],
-] as const;
-
-const educationVideos = [
-  ["PCOS basics", "Understanding PCOS", "A calm introduction to symptoms, patterns, and when to seek care.", "MihxsdC40zI", "8 min"],
-  ["Cycle health", "Understanding your cycle", "Learn what cycle changes can tell you—and what they cannot.", "gmIzqE1mxsU", "Short video"],
-  ["Preparing for care", "Questions for your clinician", "Build a useful conversation around your symptoms and history.", "gbNyX76pXxA", "Short video"],
 ] as const;
 
 export function LandingHome() {
@@ -27,10 +20,10 @@ export function LandingHome() {
     <main className="landing-new min-h-screen overflow-hidden bg-[#fbf8f9] text-[#3d2029]">
       <header className="landing-new-nav mx-auto flex max-w-7xl items-center justify-between px-5 py-5 sm:px-8 lg:px-10">
         <Link href="/" className="flex items-center gap-3"><BrandLogo size={42} priority /><span><strong className="block text-sm tracking-[.16em]">P.R.O.M.I.S.E.</strong><small className="text-xs text-[#765761]">Health education</small></span></Link>
-        <nav className="hidden items-center gap-5 text-sm font-semibold text-[#765761] md:flex"><a href="#how-it-works">How it works</a><a href="#features">Features</a><a href="#education">Educational</a><a href="#safety">Safety</a><Link href="/login">Log in</Link><Link href="/register" className="landing-new-button">Get started <ArrowRight className="size-4" /></Link></nav>
+        <nav className="hidden items-center gap-5 text-sm font-semibold text-[#765761] md:flex"><a href="#how-it-works">How it works</a><a href="#features">Features</a><Link href="/education">Educational</Link><a href="#safety">Safety</a><Link href="/login">Log in</Link><Link href="/register" className="landing-new-button">Get started <ArrowRight className="size-4" /></Link></nav>
         <button className="rounded-lg p-2 md:hidden" onClick={() => setMenuOpen(!menuOpen)} aria-label={menuOpen ? "Close menu" : "Open menu"} aria-expanded={menuOpen}>{menuOpen ? <X /> : <Menu />}</button>
       </header>
-      {menuOpen && <nav onClick={() => setMenuOpen(false)} className="mx-5 grid gap-3 border-b border-[#eadde1] pb-4 text-sm font-semibold md:hidden"><a href="#how-it-works">How it works</a><a href="#features">Features</a><a href="#education">Educational</a><a href="#safety">Safety</a><Link href="/login">Log in</Link></nav>}
+      {menuOpen && <nav onClick={() => setMenuOpen(false)} className="mx-5 grid gap-3 border-b border-[#eadde1] pb-4 text-sm font-semibold md:hidden"><a href="#how-it-works">How it works</a><a href="#features">Features</a><Link href="/education">Educational</Link><a href="#safety">Safety</a><Link href="/login">Log in</Link></nav>}
       <section className="landing-new-hero mx-auto grid max-w-7xl items-center gap-12 px-5 pb-20 pt-16 sm:px-8 lg:grid-cols-[1fr_.8fr] lg:px-10 lg:pb-28 lg:pt-24">
         <div><p className="landing-new-kicker">PCOS education · built for young women</p><h1>Understand your health with <em>more clarity.</em></h1><p className="mt-6 max-w-xl text-lg leading-relaxed text-[#765761]">P.R.O.M.I.S.E. helps you notice cycle patterns, learn about PCOS risk, and prepare better questions for a healthcare professional.</p><div className="mt-8 flex flex-wrap gap-3"><Link href="/register" className="landing-new-button landing-new-button-lg">Start your health journey <ArrowRight className="size-4" /></Link><a href="#how-it-works" className="landing-new-text-button">Learn how it works</a></div><p className="mt-5 text-xs text-[#765761]">Private by design · Educational support · Not a diagnosis</p></div>
         <div className="landing-new-hero-panel" aria-label="P.R.O.M.I.S.E. health companion preview"><Image src="/brand/promi-holding-phone.png" alt="P.R.O.M.I.S.E. health companion preview" fill priority sizes="(max-width: 1023px) 100vw, 42vw" className="landing-hero-art" /></div>
@@ -40,14 +33,12 @@ export function LandingHome() {
       <section id="education" aria-labelledby="education-title" className="landing-new-education mx-auto max-w-7xl px-5 py-16 sm:px-8 lg:px-10">
         <div className="grid gap-4 border-b border-[#eadde1] pb-6 md:grid-cols-[1fr_.8fr] md:items-end">
           <div><p className="landing-new-kicker">Learn at your pace</p><h2 id="education-title">Clear education for real questions.</h2></div>
-          <div className="flex flex-col items-start gap-4 md:items-end"><p className="max-w-xl text-sm leading-6 text-[#765761]">Explore PCOS and cycle health through videos and interactive reproductive anatomy.</p><Link href="/help" className="landing-new-button">Explore all education <ArrowRight className="size-4" /></Link></div>
+          <div className="flex flex-col items-start gap-4 md:items-end"><p className="max-w-xl text-sm leading-6 text-[#765761]">Explore PCOS, cycle health, and preparing for care through clear educational videos.</p><Link href="/education" className="landing-new-button">Explore education <ArrowRight className="size-4" /></Link></div>
         </div>
         <article className="landing-new-video-feature mt-8 grid overflow-hidden rounded-2xl bg-[#3d2029] text-white lg:grid-cols-[1.15fr_.85fr]">
           <div className="aspect-video bg-[#2d111d]"><iframe className="size-full" src="https://www.youtube-nocookie.com/embed/MihxsdC40zI" title="Understanding PCOS" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen /></div>
           <div className="flex flex-col justify-center p-6 sm:p-8"><span className="mb-4 w-fit rounded-full bg-white/10 px-3 py-1 text-xs font-semibold">Featured · PCOS basics</span><h3 className="text-2xl font-semibold">Understanding PCOS</h3><p className="mt-3 text-sm leading-relaxed text-white/70">Symptoms, patterns, and when to seek care.</p><p className="mt-5 text-xs text-white/60">Reviewed educational content · 8 min</p></div>
         </article>
-        <div className="mt-6 grid gap-4 md:grid-cols-2">{educationVideos.slice(1).map(([category, title, body, videoId, duration]) => <article key={title} className="landing-new-video-card overflow-hidden p-0"><a href={`https://www.youtube.com/watch?v=${videoId}`} target="_blank" rel="noreferrer" aria-label={`Watch ${title} on YouTube`} className="relative mt-0 block aspect-video overflow-hidden bg-cover bg-center" style={{ backgroundImage: `url(https://i.ytimg.com/vi/${videoId}/hqdefault.jpg)` }}><span className="absolute inset-x-0 bottom-0 flex items-center justify-between bg-gradient-to-t from-black/80 to-transparent p-4 pt-10 text-xs font-bold text-white"><span>{category}</span><b className="rounded-full bg-black/50 px-2 py-1">{duration}</b></span></a><div className="p-5"><h3 className="mt-0">{title}</h3><p>{body}</p><a href={`https://www.youtube.com/watch?v=${videoId}`} target="_blank" rel="noreferrer">Watch on YouTube <ArrowRight className="size-4" /></a></div></article>)}</div>
-        <div className="mt-8 rounded-2xl bg-[#3d2029] p-2 sm:p-4"><AnatomyViewer /></div>
         <p className="mt-6 text-xs text-[#765761]">Educational content supports—not replaces—care from a qualified healthcare professional.</p>
       </section>
       <section className="mx-auto max-w-7xl px-5 py-16 sm:px-8 lg:px-10"><PatientStories showAllLink /></section>

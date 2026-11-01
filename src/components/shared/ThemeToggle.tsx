@@ -23,7 +23,7 @@ export function ThemeToggle({ className }: Props) {
     <button
       type="button"
       className={cn(
-        "relative flex size-10 shrink-0 items-center justify-center rounded-[16px] text-muted-foreground hover:bg-accent hover:text-primary active:scale-95",
+        "relative flex size-10 shrink-0 items-center justify-center rounded-[16px] text-muted-foreground hover:bg-accent hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring active:scale-95",
         className,
       )}
       aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}
